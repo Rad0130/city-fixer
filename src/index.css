@@ -1,0 +1,29 @@
+@import "tailwindcss";
+@plugin "daisyui";
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Stack+Sans+Text:wght@200..700&display=swap');
+
+
+@plugin "daisyui" {
+  themes: winter --default, night --prefersdark;
+}
+
+@custom-variant dark (&:where([data-theme=night], [data-theme=night] *));
+
+*{
+  font-family: 'Inter', sans-serif;
+}
+
+a.active {
+  @apply bg-blue-500;
+  @apply text-white;
+
+}
+
+
+@plugin "daisyui/theme" {
+  --color-primary: #403f3f;
+  --color-secondary: #d72050;
+  --color-base-200: #f3f3f3;
+  --color-base-300: #e7e7e7;
+  --color-accent: #706f6f;
+}
