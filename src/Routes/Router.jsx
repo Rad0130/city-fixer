@@ -11,6 +11,8 @@ import ForgetPassword from '../pages/Forget/ForgetPassword';
 import PrivateRoute from './PrivateRoute';
 import IssueDetails from '../pages/Issues/IssueDetails';
 import AllIssues from '../pages/Issues/AllIssues';
+import DashboardLayout from '../Layouts/DashboardLayout';
+import MyPayments from '../pages/Dashboard/MyPayments';
 
 const router = createBrowserRouter([
   {
@@ -51,6 +53,16 @@ const router = createBrowserRouter([
   {
     path:'/forget',
     Component:ForgetPassword
+  },
+  {
+    path:'dashboard',
+    element:<PrivateRoute><DashboardLayout></DashboardLayout></PrivateRoute>,
+    children:[
+      {
+        path:'mypayments',
+        Component:MyPayments
+      }
+    ]
   }
 ]);
 

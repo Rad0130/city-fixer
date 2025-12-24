@@ -52,6 +52,9 @@ const Navbar = () => {
                   <div tabIndex={0} role="button" className="m-1"><img className='w-10 h-10 rounded-full cursor-pointer' src={user.photoURL} alt={user.displayName} /></div>
                   <ul tabIndex="-1" className="dropdown-content menu bg-base-100 rounded-box z-1 w-60 p-2 shadow-sm">
                     <li><span>{user.displayName}</span></li>
+                    <li>
+                      <Link to='/dashboard' className='btn'>Dashboard</Link>
+                    </li>
                     <li><button onClick={handleLogOut} className='btn btn-primary'>logOut</button></li>
                   </ul>
                 </div> : <div><Link to='/register' className='btn btn-primary mr-2'>Register</Link>
