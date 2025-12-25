@@ -5,6 +5,7 @@ import useAxios from '../../Hooks/useAxios';
 import {Calendar,Tag,AlertCircle,Clock,User,ArrowLeft,Trash2,Edit3,Zap,MapPin,ThumbsUp,Image as ImageIcon} from 'lucide-react';
 import Swal from 'sweetalert2';
 import useAuth from '../../Hooks/useAuth';
+import useAxiosSecure from '../../Hooks/useAxiosSecure';
 
 const IssueDetails = () => {
   const { id } = useParams();
@@ -12,6 +13,7 @@ const IssueDetails = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const {user}=useAuth();
+  const axiosSecure=useAxiosSecure();
 
   // Fetch single issue data
   const { data: issues, isLoading, error } = useQuery({
@@ -78,7 +80,7 @@ const IssueDetails = () => {
     return 'badge-ghost';
   };
 
-  const handlePayment=()=>{
+  const handlePayment=async()=>{
     Swal.fire({
     title: "Are you Ready to pay 100tk?",
     text: "You won't get any refund!",
@@ -87,13 +89,20 @@ const IssueDetails = () => {
     confirmButtonColor: "#3085d6",
     cancelButtonColor: "#d33",
     confirmButtonText: "Pay"
-  }).then((result) => {
+  }).then(async(result) => {
     if (result.isConfirmed) {
-      Swal.fire({
-        title: "Paid",
-        text: "Your payment is successfull.",
-        icon: "success"
-      });
+      const paymentInfo={
+        title:issue.title,
+        issueID:issue._id
+      }
+
+      const res=await axiosSecure.post('/create-checkout-session',paymentInfo);
+      console.log(res.data);
+      // Swal.fire({
+      //   title: "Paid",
+      //   text: "Your payment is successfull.",
+      //   icon: "success"
+      // });
     }
   });
   }
