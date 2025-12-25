@@ -2,20 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useAxios from '../../Hooks/useAxios';
-import {
-  Calendar,
-  Tag,
-  AlertCircle,
-  Clock,
-  User,
-  ArrowLeft,
-  Trash2,
-  Edit3,
-  Zap,
-  MapPin,
-  ThumbsUp,
-  Image as ImageIcon
-} from 'lucide-react';
+import {Calendar,Tag,AlertCircle,Clock,User,ArrowLeft,Trash2,Edit3,Zap,MapPin,ThumbsUp,Image as ImageIcon} from 'lucide-react';
 import Swal from 'sweetalert2';
 import useAuth from '../../Hooks/useAuth';
 
@@ -90,6 +77,26 @@ const IssueDetails = () => {
     if (s === 'In Progress') return 'badge-info';
     return 'badge-ghost';
   };
+
+  const handlePayment=()=>{
+    Swal.fire({
+    title: "Are you Ready to pay 100tk?",
+    text: "You won't get any refund!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Pay"
+  }).then((result) => {
+    if (result.isConfirmed) {
+      Swal.fire({
+        title: "Paid",
+        text: "Your payment is successfull.",
+        icon: "success"
+      });
+    }
+  });
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 mt-10">
@@ -273,8 +280,8 @@ const IssueDetails = () => {
 
               <div className="divider">Quick Actions</div>
 
-              <button
-                onClick={() => boostMutation.mutate()}
+              <button onClick={handlePayment}
+                // onClick={() => boostMutation.mutate()}
                 disabled={issue.priority === 'High' || boostMutation.isLoading}
                 className={`btn w-full gap-2 shadow-lg ${
                   issue.priority === 'High' 
