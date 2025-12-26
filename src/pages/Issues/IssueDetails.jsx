@@ -1,6 +1,6 @@
-import React from 'react';
-import { useParams, useNavigate } from 'react-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router';
+import { useQuery, useMutation} from '@tanstack/react-query';
 import useAxios from '../../Hooks/useAxios';
 import {Calendar,Tag,AlertCircle,Clock,User,ArrowLeft,Trash2,Edit3,Zap,MapPin,ThumbsUp,Image as ImageIcon} from 'lucide-react';
 import Swal from 'sweetalert2';
@@ -11,12 +11,12 @@ const IssueDetails = () => {
   const { id } = useParams();
   const axios = useAxios();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const {user}=useAuth();
   const axiosSecure=useAxiosSecure();
+  const [searchParams, setSearchParams]=useSearchParams();
 
   // Fetch single issue data
-  const { data: issues, isLoading, error } = useQuery({
+  const { data: issues, isLoading, error, refetch } = useQuery({
     queryKey: ['issue', id],
     queryFn: async () => {
       const res = await axios.get(`/issues?_id=${id}`);
@@ -40,16 +40,58 @@ const IssueDetails = () => {
     }
   });
 
-  // Mutation for Boosting Priority
-  const boostMutation = useMutation({
-    mutationFn: () => axios.patch(`/issues/${id}`, { priority: 'High' }),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['issue', id]);
-      Swal.fire('Boosted!', 'Issue priority set to High.', 'success');
-    }
-  });
+  const handlePayment=async()=>{
+    Swal.fire({
+    title: "Are you Ready to pay 100tk?",
+    text: "You won't get any refund!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Pay"
+  }).then(async(result) => {
+    if (result.isConfirmed) {
+      const paymentInfo={
+        title:issue.title,
+        issueID:issue._id,
+        email:issue.reportedBy
+      }
 
-  if (isLoading) return (
+      const res=await axiosSecure.post('/create-checkout-session',paymentInfo);
+      console.log(res.data);
+      window.location.href=res.data.url
+      
+    };
+  });
+  };
+
+    useEffect(()=>{
+      if(!issue) return;
+      const paymentStatus=searchParams.get('payment');
+      const updatedPriority=async()=>{
+        if(paymentStatus==='success'){
+          Swal.fire({
+          title: "Paid",
+          text: "Your payment is successfull.",
+          icon: "success"
+        });
+        await axiosSecure.patch(`/issues/${issue._id}`, {priority:'High'});
+        await refetch();
+        setSearchParams({}, {replace:true});
+      }
+      if(paymentStatus==='cancel'){
+          Swal.fire({
+          title: "Cancelled Payment",
+          text: "Your payment is Cancelled.",
+          icon: "info"
+        });
+        setSearchParams({}, {replace:true});
+      };
+      };
+      updatedPriority();
+  },[axiosSecure,issue,searchParams,setSearchParams, refetch])
+
+    if (isLoading) return (
     <div className="flex justify-center items-center min-h-screen">
       <span className="loading loading-bars loading-lg text-primary"></span>
     </div>
@@ -80,32 +122,6 @@ const IssueDetails = () => {
     return 'badge-ghost';
   };
 
-  const handlePayment=async()=>{
-    Swal.fire({
-    title: "Are you Ready to pay 100tk?",
-    text: "You won't get any refund!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#3085d6",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Pay"
-  }).then(async(result) => {
-    if (result.isConfirmed) {
-      const paymentInfo={
-        title:issue.title,
-        issueID:issue._id
-      }
-
-      const res=await axiosSecure.post('/create-checkout-session',paymentInfo);
-      console.log(res.data);
-      // Swal.fire({
-      //   title: "Paid",
-      //   text: "Your payment is successfull.",
-      //   icon: "success"
-      // });
-    }
-  });
-  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 mt-10">
@@ -291,7 +307,7 @@ const IssueDetails = () => {
 
               <button onClick={handlePayment}
                 // onClick={() => boostMutation.mutate()}
-                disabled={issue.priority === 'High' || boostMutation.isLoading}
+                disabled={issue.priority === 'High'}
                 className={`btn w-full gap-2 shadow-lg ${
                   issue.priority === 'High' 
                     ? 'btn-success' 
@@ -299,7 +315,7 @@ const IssueDetails = () => {
                 }`}
               >
                 <Zap size={18} fill={issue.priority === 'High' ? "currentColor" : "none"} />
-                {boostMutation.isLoading ? (
+                {isLoading ? (
                   <span className="loading loading-spinner loading-sm"></span>
                 ) : issue.priority === 'High' ? (
                   '✓ Priority Already High'
