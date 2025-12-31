@@ -68,6 +68,7 @@ const IssueDetails = () => {
     useEffect(()=>{
       if(!issue) return;
       const paymentStatus=searchParams.get('payment');
+      const sessionId=searchParams.get('sessionID');
       const updatedPriority=async()=>{
         if(paymentStatus==='success'){
           Swal.fire({
@@ -76,8 +77,17 @@ const IssueDetails = () => {
           icon: "success"
         });
         await axiosSecure.patch(`/issues/${issue._id}`, {priority:'High'});
-        await refetch();
+        const paymentInformation={
+          transactionId:sessionId,
+          issueId:issue._id,
+          IssueName:issue.title,
+          amount:100,
+          currency:'BDT',
+          paidBy:user.displayName
+        }
+        await axiosSecure.post('payments',paymentInformation);
         setSearchParams({}, {replace:true});
+        await refetch();
       }
       if(paymentStatus==='cancel'){
           Swal.fire({
@@ -89,7 +99,7 @@ const IssueDetails = () => {
       };
       };
       updatedPriority();
-  },[axiosSecure,issue,searchParams,setSearchParams, refetch])
+  },[axiosSecure,issue,searchParams,setSearchParams, refetch,user.displayName])
 
     if (isLoading) return (
     <div className="flex justify-center items-center min-h-screen">
