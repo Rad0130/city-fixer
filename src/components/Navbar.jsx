@@ -54,6 +54,7 @@ const Navbar = () => {
                     <li><span>{user.displayName}</span></li>
                     <li>
                       <Link to='/dashboard' className='btn'>Dashboard</Link>
+                      <Link to='reportIssue' className='btn'>Report Issue</Link>
                     </li>
                     <li><button onClick={handleLogOut} className='btn btn-primary'>logOut</button></li>
                   </ul>

@@ -13,6 +13,7 @@ import IssueDetails from '../pages/Issues/IssueDetails';
 import AllIssues from '../pages/Issues/AllIssues';
 import DashboardLayout from '../Layouts/DashboardLayout';
 import MyPayments from '../pages/Dashboard/MyPayments';
+import ReportIssue from '../pages/Issues/ReportIssue';
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
       {
         path:'/details/:id',
         element:<PrivateRoute><IssueDetails></IssueDetails></PrivateRoute>
+      },
+      {
+        path:'/reportIssue',
+        element:<PrivateRoute><ReportIssue></ReportIssue></PrivateRoute>
       }
     ]
   },
