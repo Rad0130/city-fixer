@@ -36,7 +36,7 @@ const IssueDetails = () => {
     mutationFn: () => axios.delete(`/issues/${id}`),
     onSuccess: () => {
       Swal.fire('Deleted!', 'The issue has been removed.', 'success');
-      navigate('/all-issues');
+      navigate('/allissues');
     }
   });
 

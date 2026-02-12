@@ -4,6 +4,7 @@ import useAxiosSecure from '../../Hooks/useAxiosSecure';
 import { AlertCircle, MapPin, Mail, MessageSquare, Tag } from 'lucide-react'; // Optional: install lucide-react
 import { useNavigate } from 'react-router';
 import useAuth from '../../Hooks/useAuth';
+import Swal from 'sweetalert2';
 
 const ReportIssue = () => {
     const axiosSecure = useAxiosSecure();
@@ -13,28 +14,71 @@ const ReportIssue = () => {
     const {user}=useAuth();
 
     const onSubmit = async (data) => {
-        // Formatting the data to match your JSON structure
-        setloading(true);
-        const reportData = {
-            ...data,
-            status: "In Progress",
-            upvotes: 0,
-            createdAt: new Date().toISOString(),
-            priorityOrder: data.priority === "High" ? 1 : 2
-        };
-
         try {
-            const res = await axiosSecure.post('/issues', reportData);
-            setloading(false);
-            console.log("Report submitted successfully", res.data);
-            navigate('/allissues');
+            setloading(true);
 
-            // Add a toast notification here!
-        } catch (err) {
-            console.error("Error submitting report", err);
+            // 🔹 Upload image to imgbb
+            const imageFile = data.image[0];
+
+            const formData = new FormData();
+            formData.append("image", imageFile);
+
+            const image_url = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_Image_Host}`;
+
+            const imageRes = await fetch(image_url, {
+                method: "POST",
+                body: formData
+            });
+
+            const imageData = await imageRes.json();
+
+            if (!imageData.success) {
+                throw new Error("Image upload failed");
+            }
+
+            const imageLink = imageData.data.display_url;
+
+            // 🔹 Prepare issue data
+            const reportData = {
+                title: data.title,
+                category: data.category,
+                priority: data.priority,
+                location: data.location,
+                reportedBy: user.email,
+                description: data.description,
+                image: imageLink,
+                status: "In Progress",
+                upvotes: 0,
+                upvotedBy: [],
+                createdAt: new Date()
+            };
+
+            // 🔹 Send to backend
+            const res = await axiosSecure.post("/issues", reportData);
+            console.log(res.data);
+
+            Swal.fire({
+                position: "top-end",
+                icon: "success",
+                title: "Issue Reported Successfully",
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            navigate("/allissues");
+
+        } catch (error) {
+            console.error(error);
+            Swal.fire({
+                icon: "error",
+                title: "Upload Failed",
+                text: "Something went wrong!"
+            });
+        } finally {
             setloading(false);
         }
     };
+
     if(loading){
         return <div className='flex justify-center items-center min-h-screen'>
             <span className="loading loading-spinner text-primary"></span>
@@ -136,12 +180,12 @@ const ReportIssue = () => {
 
                     {/* Image URL */}
                     <div>
-                        <label className="block text-sm font-semibold text-gray-700 mb-2">Image URL</label>
-                        <input 
-                            {...register("image")}
-                            placeholder="https://i.postimg.cc/..."
-                            className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none transition"
+                        <input
+                            type="file"
+                            {...register("image", { required: "Image is required" })}
+                            className="file-input file-input-bordered w-full"
                         />
+
                     </div>
 
                     {/* Submit Button */}
