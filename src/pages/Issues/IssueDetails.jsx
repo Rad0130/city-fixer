@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router';
+import { useParams, useNavigate, useSearchParams, Link } from 'react-router';
 import { useQuery, useMutation} from '@tanstack/react-query';
 import useAxios from '../../Hooks/useAxios';
 import {Calendar,Tag,AlertCircle,Clock,User,ArrowLeft,Trash2,Edit3,Zap,MapPin,ThumbsUp,Image as ImageIcon} from 'lucide-react';
@@ -146,12 +146,11 @@ const IssueDetails = () => {
 
         {
             user.email===issue.reportedBy && <div className="flex gap-2">
-          <button
-            onClick={() => navigate(`/edit-issue/${id}`)}
+          <Link to={`/editissue/${id}`}
             className="btn btn-outline btn-sm md:btn-md gap-2"
           >
             <Edit3 size={18} /> Edit
-          </button>
+          </Link>
           <button
             onClick={() => {
               Swal.fire({

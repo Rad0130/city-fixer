@@ -14,6 +14,7 @@ import AllIssues from '../pages/Issues/AllIssues';
 import DashboardLayout from '../Layouts/DashboardLayout';
 import MyPayments from '../pages/Dashboard/MyPayments';
 import ReportIssue from '../pages/Issues/ReportIssue';
+import EditIssue from '../pages/Issues/EditIssue';
 
 const router = createBrowserRouter([
   {
@@ -44,6 +45,10 @@ const router = createBrowserRouter([
       {
         path:'/reportIssue',
         element:<PrivateRoute><ReportIssue></ReportIssue></PrivateRoute>
+      },
+      {
+        path:'editissue/:id',
+        element:<PrivateRoute><EditIssue></EditIssue></PrivateRoute>
       }
     ]
   },
