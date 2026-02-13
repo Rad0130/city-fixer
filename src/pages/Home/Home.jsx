@@ -9,15 +9,13 @@ import IssueCard from '../Issues/IssueCard';
 const Home = () => {
     const axios=useAxios();
 
-    const {data:allIssues=[]}=useQuery({
-        queryKey:['issues'],
-        queryFn: async()=>{
-            const res=await axios.get('/issues');
-            return res.data;
-        }
-    })
-
-    const resolvedIssues=allIssues.filter(issue=>issue.status==='Resolved');
+    const { data: resolvedIssues = [] } = useQuery({
+    queryKey: ['resolvedIssues'],
+    queryFn: async () => {
+        const res = await axios.get('/issues/resolved');
+        return res.data;
+    }
+    });
 
     return (
         <div className='mt-16'>
@@ -27,7 +25,7 @@ const Home = () => {
             </div>
             <div className='grid grid-cols-1 md:grid-cols-5 gap-4'>
                 {
-                    resolvedIssues.slice(0,6).map(issue=>
+                    resolvedIssues.map(issue=>
                         <IssueCard key={issue._id} issue={issue}></IssueCard>
                     )
                 }

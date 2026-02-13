@@ -12,7 +12,6 @@ const AllIssues = () => {
         priority: []
     });
     const [search, setSearch] = useState('');
-    const [count,setCount] = useState(0);
     const [currentPage,setCurrentPage]=useState(0);
     
     const searchInputRef = useRef(null);
@@ -44,11 +43,29 @@ const AllIssues = () => {
         cacheTime: 10000,
     });
 
-    useEffect(()=>{
-        axios.get('/issues/count').then(res=>{
-            setCount(res.data.count);
+    const { data: countData } = useQuery({
+        queryKey: ['issues-count', filters, search],
+        queryFn: async () => {
+            const params = new URLSearchParams();
+
+            if (filters.categories.length)
+            params.append('category', filters.categories.join(','));
+
+            if (filters.status.length)
+            params.append('status', filters.status.join(','));
+
+            if (filters.priority.length)
+            params.append('priority', filters.priority.join(','));
+
+            if (search)
+            params.append('search', search);
+
+            const res = await axios.get(`/issues/count?${params.toString()}`);
+            return res.data.count;
+        }
         });
-    },[axios]);
+    const count = countData || 0;
+
 
     // Handle search input focus
     const handleSearchChange = (e) => {
