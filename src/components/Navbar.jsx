@@ -4,66 +4,187 @@ import { Link, NavLink, useNavigate } from 'react-router';
 import useAuth from '../Hooks/useAuth';
 
 const Navbar = () => {
-  const {user, logOut}=useAuth();
-  const links = <>
-    <li><NavLink to='/'>Home</NavLink></li>
-    <li><NavLink to='/allissues'>All Issues</NavLink></li>
-    <li><NavLink to='/aboutus'>About us</NavLink></li>
-    <li><NavLink to='/howitworks'>How It Works</NavLink></li>
-  </>
-  const navigate=useNavigate();
+  const { user, logOut } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogOut=()=>{
+  const handleLogOut = () => {
     logOut()
-    .then(result=>{
-      console.log('result', result);
-      navigate('/login')
-    })
-    .catch(error=>{
-      console.log(error.message);
-    })
-  }
-    return (
-        <div className="navbar bg-base-100 shadow-sm fixed top-0 left-0 right-0 z-50 px-0 md:px-30">
-          <div className="navbar-start">
-            <div className="dropdown">
-              <div tabIndex={0} role="button" className="btn btn-ghost lg:hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"> <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" /> </svg>
+      .then(() => navigate('/login'))
+      .catch((error) => console.log(error.message));
+  };
+
+  const navLinkStyle = ({ isActive }) => ({
+    color: isActive ? '#818cf8' : 'rgba(255,255,255,0.65)',
+    fontWeight: isActive ? 700 : 500,
+    fontSize: '0.9rem',
+    letterSpacing: '0.02em',
+    textDecoration: 'none',
+    padding: '0.4rem 0.8rem',
+    borderRadius: 8,
+    background: isActive ? 'rgba(99,102,241,0.12)' : 'transparent',
+    transition: 'all 0.2s',
+    fontFamily: "'DM Sans', sans-serif",
+  });
+
+  const links = (
+    <>
+      <li><NavLink to="/" style={navLinkStyle}>Home</NavLink></li>
+      <li><NavLink to="/allissues" style={navLinkStyle}>All Issues</NavLink></li>
+      <li><NavLink to="/aboutus" style={navLinkStyle}>About Us</NavLink></li>
+      <li><NavLink to="/howitworks" style={navLinkStyle}>How It Works</NavLink></li>
+    </>
+  );
+
+  return (
+    <nav style={{
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+      background: 'rgba(10,10,26,0.85)',
+      backdropFilter: 'blur(20px)',
+      borderBottom: '1px solid rgba(255,255,255,0.07)',
+      padding: '0 clamp(1rem, 4vw, 4rem)',
+    }}>
+      <div style={{
+        maxWidth: 1400, margin: '0 auto',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: 64,
+      }}>
+        {/* Logo */}
+        <Link to="/" style={{
+          display: 'flex', alignItems: 'center', gap: '0.75rem',
+          textDecoration: 'none',
+        }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'linear-gradient(135deg, #6366f1, #ec4899)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 20px rgba(99,102,241,0.5)',
+            overflow: 'hidden',
+          }}>
+            <img src={logo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+          <span style={{
+            fontFamily: "'Syne', sans-serif",
+            fontWeight: 800, fontSize: '1.2rem',
+            background: 'linear-gradient(135deg, #fff 40%, #a5b4fc)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+          }}>
+            CityFix
+          </span>
+        </Link>
+
+        {/* Desktop Links */}
+        <ul style={{
+          listStyle: 'none', margin: 0, padding: 0,
+        }} className="hidden lg:flex items-center gap-2">
+          {links}
+        </ul>
+
+        {/* Right: Auth */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {user ? (
+            <div className="dropdown dropdown-end">
+              <div tabIndex={0} role="button" style={{
+                width: 40, height: 40, borderRadius: '50%',
+                border: '2px solid rgba(99,102,241,0.6)',
+                overflow: 'hidden', cursor: 'pointer',
+                boxShadow: '0 0 15px rgba(99,102,241,0.3)',
+              }}>
+                <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <ul
-                tabIndex="-1"
-                className="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
-                {links}
+              <ul tabIndex="-1" className="dropdown-content" style={{
+                background: 'rgba(13,17,30,0.95)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 16, padding: '0.75rem',
+                width: 220, marginTop: '0.5rem',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                listStyle: 'none',
+              }}>
+                <li style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: '0.5rem' }}>
+                  <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{user.displayName}</span>
+                  <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: 2 }}>{user.email}</div>
+                </li>
+                <li style={{ marginBottom: '0.25rem' }}>
+                  <Link to="/dashboard" style={{
+                    display: 'block', padding: '0.5rem 0.75rem', borderRadius: 8,
+                    color: 'rgba(255,255,255,0.75)', fontSize: '0.875rem',
+                    textDecoration: 'none', transition: 'all 0.2s',
+                  }}>📊 Dashboard</Link>
+                </li>
+                <li style={{ marginBottom: '0.25rem' }}>
+                  <Link to="/reportIssue" style={{
+                    display: 'block', padding: '0.5rem 0.75rem', borderRadius: 8,
+                    color: 'rgba(255,255,255,0.75)', fontSize: '0.875rem',
+                    textDecoration: 'none', transition: 'all 0.2s',
+                  }}>🚩 Report Issue</Link>
+                </li>
+                <li style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '0.5rem' }}>
+                  <button onClick={handleLogOut} style={{
+                    width: '100%', padding: '0.5rem 0.75rem', borderRadius: 8,
+                    background: 'rgba(236,72,153,0.15)',
+                    border: '1px solid rgba(236,72,153,0.3)',
+                    color: '#f472b6', fontSize: '0.875rem', fontWeight: 600,
+                    cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left',
+                  }}>
+                    ↩ Log Out
+                  </button>
+                </li>
               </ul>
             </div>
-            <Link to='/' className="flex items-center gap-2">
-              <img className='w-8 h-8 rounded-full' src={logo} alt="" />
-              <div className="font-extrabold text-xl">CIty-Fixer</div>
-            </Link>
-          </div>
-          <div className="navbar-center hidden lg:flex">
-            <ul className="menu menu-horizontal px-1">
+          ) : (
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <Link to="/login" style={{
+                padding: '0.5rem 1.2rem', borderRadius: 999,
+                border: '1px solid rgba(255,255,255,0.18)',
+                color: 'rgba(255,255,255,0.8)', fontSize: '0.875rem', fontWeight: 600,
+                textDecoration: 'none', transition: 'all 0.2s',
+              }}>
+                Login
+              </Link>
+              <Link to="/register" style={{
+                padding: '0.5rem 1.2rem', borderRadius: 999,
+                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                color: '#fff', fontSize: '0.875rem', fontWeight: 600,
+                textDecoration: 'none',
+                boxShadow: '0 0 20px rgba(99,102,241,0.4)',
+                transition: 'all 0.2s',
+              }}>
+                Register
+              </Link>
+            </div>
+          )}
+
+          {/* Mobile hamburger */}
+          <div className="dropdown lg:hidden">
+            <div tabIndex={0} role="button" style={{
+              width: 36, height: 36, borderRadius: 8,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+            }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.7)">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h8m-8 6h16" />
+              </svg>
+            </div>
+            <ul tabIndex="-1" className="dropdown-content" style={{
+              background: 'rgba(13,17,30,0.95)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 16, padding: '0.75rem',
+              width: 200, marginTop: '0.5rem',
+              listStyle: 'none',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+            }}>
               {links}
             </ul>
           </div>
-          <div className="navbar-end">
-            {
-              user? <div className="dropdown dropdown-end">
-                  <div tabIndex={0} role="button" className="m-1"><img className='w-10 h-10 rounded-full cursor-pointer' src={user.photoURL} alt={user.displayName} /></div>
-                  <ul tabIndex="-1" className="dropdown-content menu bg-base-100 rounded-box z-1 w-60 p-2 shadow-sm">
-                    <li><span>{user.displayName}</span></li>
-                    <li>
-                      <Link to='/dashboard' className='btn'>Dashboard</Link>
-                      <Link to='reportIssue' className='btn'>Report Issue</Link>
-                    </li>
-                    <li><button onClick={handleLogOut} className='btn btn-primary'>logOut</button></li>
-                  </ul>
-                </div> : <div><Link to='/register' className='btn btn-primary mr-2'>Register</Link>
-            <Link to='/login' className='btn btn-primary'>Login</Link></div>
-            }
-          </div>
         </div>
-    );
+      </div>
+    </nav>
+  );
 };
 
 export default Navbar;
