@@ -1,29 +1,46 @@
+/* ─── ADD THESE IMPORTS AT THE TOP OF index.css ─────────────────────────────
+   Replace the existing Google Fonts import with this one:
+────────────────────────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap');
 @import "tailwindcss";
 @plugin "daisyui";
-@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lora:ital,wght@0,400..700;1,400..700&family=Stack+Sans+Text:wght@200..700&display=swap');
-
 
 @plugin "daisyui" {
-  themes: winter --default, night --prefersdark;
+  themes: night --default;
 }
 
 @custom-variant dark (&:where([data-theme=night], [data-theme=night] *));
 
-*{
-  font-family: 'Inter', sans-serif;
+* {
+  font-family: 'DM Sans', sans-serif;
+  box-sizing: border-box;
 }
 
+/* ─── ACTIVE NAV LINK ──────────────────────────────────────────────────────── */
 a.active {
-  @apply bg-blue-500;
-  @apply text-white;
-
+  color: #818cf8 !important;
+  font-weight: 700;
 }
 
+/* ─── SCROLLBAR ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0a0a1a; }
+::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.5); border-radius: 99px; }
 
-@plugin "daisyui/theme" {
-  --color-primary: #403f3f;
-  --color-secondary: #d72050;
-  --color-base-200: #f3f3f3;
-  --color-base-300: #e7e7e7;
-  --color-accent: #706f6f;
+/* ─── THEME OVERRIDES ──────────────────────────────────────────────────────── */
+[data-theme="night"] {
+  --color-base-100: #0d1117;
+  --color-base-200: #161b22;
+  --color-base-300: #21262d;
+  --color-primary: #6366f1;
+  --color-secondary: #ec4899;
+  --color-accent: #22d3ee;
+}
+
+/* ─── GLOBAL PAGE BACKGROUND ───────────────────────────────────────────────── */
+body {
+  background: linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 40%, #0a1628 70%, #0f0a2e 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
 }
