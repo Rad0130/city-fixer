@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router';
-import { useQuery, useMutation} from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import useAxios from '../../Hooks/useAxios';
-import {Calendar,Tag,AlertCircle,Clock,User,ArrowLeft,Trash2,Edit3,Zap,MapPin,ThumbsUp,Image as ImageIcon} from 'lucide-react';
+import { Calendar, Tag, AlertCircle, Clock, User, ArrowLeft, Trash2, Edit3, Zap, MapPin, ThumbsUp, Image as ImageIcon } from 'lucide-react';
 import Swal from 'sweetalert2';
 import useAuth from '../../Hooks/useAuth';
 import useAxiosSecure from '../../Hooks/useAxiosSecure';
@@ -11,359 +11,341 @@ const IssueDetails = () => {
   const { id } = useParams();
   const axios = useAxios();
   const navigate = useNavigate();
-  const {user}=useAuth();
-  const axiosSecure=useAxiosSecure();
-  const [searchParams, setSearchParams]=useSearchParams();
+  const { user } = useAuth();
+  const axiosSecure = useAxiosSecure();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Fetch single issue data
   const { data: issues, isLoading, error, refetch } = useQuery({
     queryKey: ['issue', id],
     queryFn: async () => {
       const res = await axios.get(`/issues?_id=${id}`);
       return res.data;
-    }
+    },
   });
 
-  // Extract the single issue from the array
   const issue = issues && issues.length > 0 ? issues[0] : null;
 
-  console.log('Issues array:', issues);
-  console.log('Extracted issue:', issue);
-  console.log('Issue description:', issue?.description);
-
-  // Mutation for Deleting
   const deleteMutation = useMutation({
     mutationFn: () => axios.delete(`/issues/${id}`),
     onSuccess: () => {
       Swal.fire('Deleted!', 'The issue has been removed.', 'success');
       navigate('/allissues');
-    }
+    },
   });
 
-  const handlePayment=async()=>{
+  const handlePayment = async () => {
     Swal.fire({
-    title: "Are you Ready to pay 100tk?",
-    text: "You won't get any refund!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#3085d6",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Pay"
-  }).then(async(result) => {
-    if (result.isConfirmed) {
-      const paymentInfo={
-        title:issue.title,
-        issueID:issue._id,
-        email:issue.reportedBy
+      title: 'Boost this issue for 100tk?',
+      text: "This moves your issue to the top of the admin queue!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#6366f1',
+      cancelButtonColor: '#374151',
+      confirmButtonText: 'Pay & Boost',
+      background: '#0d1117',
+      color: '#fff',
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        const paymentInfo = { title: issue.title, issueID: issue._id, email: issue.reportedBy };
+        const res = await axiosSecure.post('/create-checkout-session', paymentInfo);
+        window.location.href = res.data.url;
       }
-
-      const res=await axiosSecure.post('/create-checkout-session',paymentInfo);
-      console.log(res.data);
-      window.location.href=res.data.url
-      
-    };
-  });
+    });
   };
 
-    useEffect(()=>{
-      if(!issue) return;
-      const paymentStatus=searchParams.get('payment');
-      const sessionId=searchParams.get('sessionID');
-      const updatedPriority=async()=>{
-        if(paymentStatus==='success'){
-          Swal.fire({
-          title: "Paid",
-          text: "Your payment is successfull.",
-          icon: "success"
-        });
-        await axiosSecure.patch(`/issues/${issue._id}`, {priority:'High'});
-        const paymentInformation={
-          transactionId:sessionId,
-          issueId:issue._id,
-          IssueName:issue.title,
-          amount:100,
-          currency:'BDT',
-          paidBy:user.displayName
-        }
-        await axiosSecure.post('payments',paymentInformation);
-        setSearchParams({}, {replace:true});
+  useEffect(() => {
+    if (!issue) return;
+    const paymentStatus = searchParams.get('payment');
+    const sessionId = searchParams.get('sessionID');
+    const updatedPriority = async () => {
+      if (paymentStatus === 'success') {
+        Swal.fire({ title: 'Payment Successful!', text: 'Your issue has been boosted to High priority.', icon: 'success', background: '#0d1117', color: '#fff' });
+        await axiosSecure.patch(`/issues/${issue._id}`, { priority: 'High' });
+        const paymentInformation = {
+          transactionId: sessionId, issueId: issue._id, IssueName: issue.title,
+          amount: 100, currency: 'BDT', paidBy: user.displayName,
+        };
+        await axiosSecure.post('payments', paymentInformation);
+        setSearchParams({}, { replace: true });
         await refetch();
       }
-      if(paymentStatus==='cancel'){
-          Swal.fire({
-          title: "Cancelled Payment",
-          text: "Your payment is Cancelled.",
-          icon: "info"
-        });
-        setSearchParams({}, {replace:true});
-      };
-      };
-      updatedPriority();
-  },[axiosSecure,issue,searchParams,setSearchParams, refetch,user.displayName])
+      if (paymentStatus === 'cancel') {
+        Swal.fire({ title: 'Payment Cancelled', icon: 'info', background: '#0d1117', color: '#fff' });
+        setSearchParams({}, { replace: true });
+      }
+    };
+    updatedPriority();
+  }, [axiosSecure, issue, searchParams, setSearchParams, refetch, user?.displayName]);
 
-    if (isLoading) return (
-    <div className="flex justify-center items-center min-h-screen">
-      <span className="loading loading-bars loading-lg text-primary"></span>
-    </div>
-  );
-
-  if (error) return <div className="text-center mt-20 text-error">Issue not found.</div>;
-
-  // Check if issue exists
-  if (!issue) return (
-    <div className="text-center mt-20">
-      <div className="alert alert-error max-w-md mx-auto">
-        <AlertCircle size={24} />
-        <span>Issue not found or has been removed.</span>
+  if (isLoading) return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 40%, #0a1628 70%, #0f0a2e 100%)',
+    }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ width: 56, height: 56, borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTop: '3px solid #6366f1', animation: 'spin 0.8s linear infinite', margin: '0 auto 1rem' }} />
+        <p style={{ color: 'rgba(255,255,255,0.4)' }}>Loading issue details...</p>
       </div>
-      <button 
-        onClick={() => navigate('/all-issues')}
-        className="btn btn-primary mt-4"
-      >
-        Back to All Issues
-      </button>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
-  const getPriorityColor = (p) => p === 'High' ? 'badge-error' : 'badge-warning';
-  const getStatusColor = (s) => {
-    if (s === 'Resolved') return 'badge-success';
-    if (s === 'In Progress') return 'badge-info';
-    return 'badge-ghost';
-  };
+  if (error || !issue) return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 40%, #0a1628 70%, #0f0a2e 100%)',
+      flexDirection: 'column', gap: '1rem',
+    }}>
+      <div style={{ fontSize: '4rem' }}>🔍</div>
+      <h2 style={{ color: '#fff', fontFamily: "'Syne',sans-serif", fontWeight: 800 }}>Issue Not Found</h2>
+      <button onClick={() => navigate('/allissues')} style={btnStyle('#6366f1')}>Back to All Issues</button>
+    </div>
+  );
 
+  const statusColors = {
+    'Resolved': { color: '#34d399', bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.3)' },
+    'In Progress': { color: '#fbbf24', bg: 'rgba(251,191,36,0.1)', border: 'rgba(251,191,36,0.3)' },
+    'Open': { color: '#818cf8', bg: 'rgba(129,140,248,0.12)', border: 'rgba(129,140,248,0.3)' },
+  };
+  const sc = statusColors[issue.status] || statusColors['Open'];
+  const isHigh = issue.priority === 'High';
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-10 mt-10">
-      {/* Back Button & Actions */}
-      <div className="flex flex-wrap justify-between items-center mb-8 gap-4">
-        <button
-          onClick={() => navigate(-1)}
-          className="btn btn-ghost gap-2"
-        >
-          <ArrowLeft size={18} /> Back to List
-        </button>
-
-        {
-            user.email===issue.reportedBy && <div className="flex gap-2">
-          <Link to={`/editissue/${id}`}
-            className="btn btn-outline btn-sm md:btn-md gap-2"
-          >
-            <Edit3 size={18} /> Edit
-          </Link>
-          <button
-            onClick={() => {
-              Swal.fire({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!'
-              }).then((result) => {
-                if (result.isConfirmed) deleteMutation.mutate();
-              })
-            }}
-            className="btn btn-error btn-outline btn-sm md:btn-md gap-2"
-          >
-            <Trash2 size={18} /> Delete
-          </button>
-        </div>
-        }
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 40%, #0a1628 70%, #0f0a2e 100%)',
+      fontFamily: "'DM Sans', sans-serif",
+      paddingTop: '5rem', paddingBottom: '4rem',
+    }}>
+      {/* Background orbs */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: 0, right: 0, width: '40vw', height: '40vw', maxWidth: 600, background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '30vw', height: '30vw', maxWidth: 400, background: 'radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content Side */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="card bg-base-100 shadow-xl border border-base-200">
-            <div className="card-body">
-              {/* Status, Priority, and Upvotes */}
-              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <span className={`badge ${getStatusColor(issue.status)} badge-lg font-bold`}>
-                    {issue.status}
-                  </span>
-                  <span className={`badge ${getPriorityColor(issue.priority)} badge-lg font-bold`}>
-                    {issue.priority} Priority
-                  </span>
-                </div>
-                
-                {/* Upvotes Display */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-base-200 rounded-full">
-                  <ThumbsUp size={20} className="text-primary" />
-                  <span className="font-bold text-lg">{issue.upvotes || 0}</span>
-                  <span className="text-sm opacity-70">upvotes</span>
-                </div>
-              </div>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2rem clamp(1rem,4vw,2rem)', position: 'relative', zIndex: 1 }}>
 
-              {/* Issue Title */}
-              <h1 className="card-title text-3xl md:text-4xl font-extrabold mb-2">
-                {issue.title}
-              </h1>
+        {/* ── TOP BAR ── */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+          <button onClick={() => navigate(-1)} style={{
+            display: 'flex', alignItems: 'center', gap: '0.5rem',
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 10, padding: '0.6rem 1.2rem',
+            color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem', fontWeight: 600,
+            cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'DM Sans',sans-serif",
+          }}>
+            <ArrowLeft size={16} /> Back
+          </button>
 
-              {/* Location */}
-              <div className="flex items-center gap-2 mb-6">
-                <MapPin size={18} className="text-gray-500" />
-                <span className="text-lg text-gray-600">{issue.location}</span>
-              </div>
-
-              {/* Image Section */}
-              {issue.image && (
-                <div className="mb-8">
-                  <div className="flex items-center gap-2 mb-3">
-                    <ImageIcon size={20} className="text-gray-500" />
-                    <h3 className="font-bold text-lg">Issue Image</h3>
-                  </div>
-                  <div className="relative rounded-xl overflow-hidden shadow-lg">
-                    <img
-                      src={issue.image}
-                      alt={`Image of ${issue.title}`}
-                      className="w-full h-auto max-h-[500px] object-cover"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = "https://placehold.co/600x400?text=Image+Not+Found";
-                      }}
-                    />
-                  </div>
-                  <p className="text-sm text-gray-500 text-center mt-2">
-                    Image submitted by reporter
-                  </p>
-                </div>
-              )}
-
-              {/* Description Section */}
-              <div className="space-y-4">
-                <div className="divider">
-                  <h3 className="text-xl font-bold">Description</h3>
-                </div>
-                
-                <div className="bg-base-100 rounded-xl p-6 border border-base-300">
-                  <p className="text-lg leading-relaxed text-base-content/90 whitespace-pre-line">
-                    {issue.description || "No detailed description provided for this issue."}
-                  </p>
-                </div>
-              </div>
+          {user?.email === issue.reportedBy && (
+            <div style={{ display: 'flex', gap: '0.6rem' }}>
+              <Link to={`/editissue/${id}`} style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)',
+                borderRadius: 10, padding: '0.6rem 1.2rem',
+                color: '#818cf8', fontSize: '0.875rem', fontWeight: 600,
+                textDecoration: 'none', transition: 'all 0.2s',
+              }}>
+                <Edit3 size={15} /> Edit
+              </Link>
+              <button onClick={() => {
+                Swal.fire({
+                  title: 'Delete this issue?', text: "This action cannot be undone.",
+                  icon: 'warning', showCancelButton: true,
+                  confirmButtonColor: '#ec4899', cancelButtonColor: '#374151',
+                  confirmButtonText: 'Yes, delete', background: '#0d1117', color: '#fff',
+                }).then(r => { if (r.isConfirmed) deleteMutation.mutate(); });
+              }} style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                background: 'rgba(236,72,153,0.12)', border: '1px solid rgba(236,72,153,0.3)',
+                borderRadius: 10, padding: '0.6rem 1.2rem',
+                color: '#f472b6', fontSize: '0.875rem', fontWeight: 600,
+                cursor: 'pointer', transition: 'all 0.2s', fontFamily: "'DM Sans',sans-serif",
+              }}>
+                <Trash2 size={15} /> Delete
+              </button>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Sidebar Info & Actions */}
-        <div className="space-y-6">
-          {/* Details Card */}
-          <div className="card bg-base-100 shadow-xl border border-base-200">
-            <div className="card-body">
-              <h3 className="font-bold text-xl mb-6 pb-2 border-b">Issue Details</h3>
+        {/* ── MAIN GRID ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-              <div className="space-y-5">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg text-primary mt-1">
-                    <Tag size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs opacity-60 uppercase font-bold">Category</p>
-                    <p className="font-medium text-lg">{issue.category}</p>
-                  </div>
+          {/* ── LEFT: Main Content ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }} className="lg:col-span-2">
+
+            {/* Header card */}
+            <div style={glassCard}>
+              {/* Status + Priority + Upvotes */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <span style={{
+                    background: sc.bg, border: `1px solid ${sc.border}`,
+                    borderRadius: 999, padding: '0.3rem 0.9rem',
+                    color: sc.color, fontSize: '0.8rem', fontWeight: 700,
+                  }}>● {issue.status}</span>
+                  <span style={{
+                    background: isHigh ? 'rgba(244,114,182,0.12)' : 'rgba(251,146,60,0.1)',
+                    border: `1px solid ${isHigh ? 'rgba(244,114,182,0.3)' : 'rgba(251,146,60,0.3)'}`,
+                    borderRadius: 999, padding: '0.3rem 0.9rem',
+                    color: isHigh ? '#f472b6' : '#fb923c', fontSize: '0.8rem', fontWeight: 700,
+                  }}>{issue.priority} Priority</span>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-secondary/10 rounded-lg text-secondary mt-1">
-                    <User size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs opacity-60 uppercase font-bold">Reported By</p>
-                    <p className="font-medium text-lg break-all">{issue.reportedBy || 'Anonymous'}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-accent/10 rounded-lg text-accent mt-1">
-                    <Calendar size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs opacity-60 uppercase font-bold">Reported Date</p>
-                    <p className="font-medium">
-                      {issue.createdAt 
-                        ? new Date(issue.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
-                        : 'Date not available'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-success/10 rounded-lg text-success mt-1">
-                    <Clock size={20} />
-                  </div>
-                  <div>
-                    <p className="text-xs opacity-60 uppercase font-bold">Last Updated</p>
-                    <p className="font-medium">
-                      {issue.updatedAt 
-                        ? new Date(issue.updatedAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })
-                        : 'Date not available'}
-                    </p>
-                  </div>
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '0.5rem',
+                  background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+                  borderRadius: 999, padding: '0.4rem 1rem',
+                }}>
+                  <ThumbsUp size={16} color="#818cf8" />
+                  <span style={{ fontWeight: 700, color: '#818cf8', fontSize: '1rem' }}>{issue.upvotes || 0}</span>
+                  <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.8rem' }}>upvotes</span>
                 </div>
               </div>
 
-              <div className="divider">Quick Actions</div>
+              {/* Title */}
+              <h1 style={{
+                fontFamily: "'Syne',sans-serif", fontWeight: 800,
+                fontSize: 'clamp(1.5rem,3vw,2.2rem)', color: '#fff',
+                lineHeight: 1.2, marginBottom: '0.75rem',
+              }}>{issue.title}</h1>
 
-              <button onClick={handlePayment}
-                // onClick={() => boostMutation.mutate()}
-                disabled={issue.priority === 'High'}
-                className={`btn w-full gap-2 shadow-lg ${
-                  issue.priority === 'High' 
-                    ? 'btn-success' 
-                    : 'btn-primary'
-                }`}
-              >
-                <Zap size={18} fill={issue.priority === 'High' ? "currentColor" : "none"} />
-                {isLoading ? (
-                  <span className="loading loading-spinner loading-sm"></span>
-                ) : issue.priority === 'High' ? (
-                  '✓ Priority Already High'
-                ) : (
-                  'Boost Priority to High'
-                )}
-              </button>
-
-              <p className="text-xs text-center mt-3 opacity-50 italic">
-                Boosting moves this issue to the top of the admin queue for faster resolution.
-              </p>
-            </div>
-          </div>
-
-          {/* Support Box */}
-          <div className="alert shadow-sm border border-info/20 bg-info/5">
-            <AlertCircle className="stroke-info" size={24} />
-            <div>
-              <h3 className="font-bold">Need immediate help?</h3>
-              <div className="text-xs">
-                Contact city council support if this issue poses immediate danger or requires urgent attention.
+              {/* Location */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'rgba(255,255,255,0.45)', marginBottom: '1.5rem' }}>
+                <MapPin size={16} color="#ec4899" />
+                <span style={{ fontSize: '0.95rem' }}>{issue.location}</span>
               </div>
-              <button className="btn btn-sm btn-info mt-2">
-                Contact Support
-              </button>
+
+              {/* Image */}
+              {issue.image && (
+                <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)' }}>
+                  <img
+                    src={issue.image}
+                    alt={issue.title}
+                    style={{ width: '100%', maxHeight: 460, objectFit: 'cover', display: 'block' }}
+                    onError={e => { e.target.src = 'https://placehold.co/600x400?text=Image+Not+Found'; }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Description card */}
+            <div style={glassCard}>
+              <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#fff', fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: '#818cf8' }}>📝</span> Description
+              </h3>
+              <div style={{
+                background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 12, padding: '1.2rem',
+              }}>
+                <p style={{ color: 'rgba(255,255,255,0.7)', lineHeight: 1.8, whiteSpace: 'pre-line', fontSize: '0.95rem' }}>
+                  {issue.description || 'No detailed description provided for this issue.'}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Share & Community Actions */}
-          <div className="card bg-base-100 shadow-sm border border-base-200">
-            <div className="card-body">
-              <h3 className="font-bold text-lg mb-4">Community Actions</h3>
-              <div className="flex gap-2">
-                <button className="btn btn-outline btn-sm flex-1">
-                  Share Issue
+          {/* ── RIGHT: Sidebar ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+
+            {/* Details card */}
+            <div style={glassCard}>
+              <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#fff', fontSize: '1rem', marginBottom: '1.2rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+                Issue Details
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {[
+                  { icon: <Tag size={16} />, label: 'Category', value: issue.category, accent: '#818cf8' },
+                  { icon: <User size={16} />, label: 'Reported By', value: issue.reportedBy || 'Anonymous', accent: '#34d399' },
+                  { icon: <Calendar size={16} />, label: 'Reported Date', value: issue.createdAt ? new Date(issue.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A', accent: '#f472b6' },
+                  { icon: <Clock size={16} />, label: 'Last Updated', value: issue.updatedAt ? new Date(issue.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A', accent: '#22d3ee' },
+                ].map(item => (
+                  <div key={item.label} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                    <div style={{
+                      width: 34, height: 34, borderRadius: 9, flexShrink: 0,
+                      background: `${item.accent}15`, border: `1px solid ${item.accent}30`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: item.accent,
+                    }}>{item.icon}</div>
+                    <div>
+                      <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.35)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.2rem' }}>{item.label}</div>
+                      <div style={{ color: '#fff', fontSize: '0.875rem', fontWeight: 500, wordBreak: 'break-all' }}>{item.value}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Boost button */}
+              <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                <button
+                  onClick={handlePayment}
+                  disabled={isHigh}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                    padding: '0.85rem', borderRadius: 12, fontWeight: 700, fontSize: '0.9rem',
+                    cursor: isHigh ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+                    // border: 'none', fontFamily: "'DM Sans',sans-serif",
+                    background: isHigh
+                      ? 'rgba(52,211,153,0.12)'
+                      : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                    color: isHigh ? '#34d399' : '#fff',
+                    boxShadow: isHigh ? 'none' : '0 0 25px rgba(99,102,241,0.4)',
+                    border: isHigh ? '1px solid rgba(52,211,153,0.3)' : 'none',
+                  }}
+                >
+                  <Zap size={17} fill={isHigh ? 'currentColor' : 'none'} />
+                  {isHigh ? '✓ Already Boosted to High' : 'Boost Priority — 100৳'}
                 </button>
-                <button className="btn btn-primary btn-sm flex-1">
-                  Follow Updates
-                </button>
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', textAlign: 'center', marginTop: '0.6rem', lineHeight: 1.5 }}>
+                  Boosting moves this issue to the top of the admin queue.
+                </p>
+              </div>
+            </div>
+
+            {/* Alert card */}
+            <div style={{
+              ...glassCard,
+              borderColor: 'rgba(6,182,212,0.25)',
+              background: 'rgba(6,182,212,0.05)',
+            }}>
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <AlertCircle size={20} color="#22d3ee" style={{ flexShrink: 0, marginTop: 2 }} />
+                <div>
+                  <h4 style={{ color: '#22d3ee', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.4rem' }}>Need urgent help?</h4>
+                  <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', lineHeight: 1.6, marginBottom: '0.75rem' }}>
+                    Contact city council support if this issue poses immediate danger.
+                  </p>
+                  <button style={{
+                    background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.3)',
+                    borderRadius: 8, padding: '0.4rem 0.9rem',
+                    color: '#22d3ee', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                    fontFamily: "'DM Sans',sans-serif",
+                  }}>
+                    Contact Support
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Community card */}
+            <div style={glassCard}>
+              <h4 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '0.9rem' }}>
+                Community Actions
+              </h4>
+              <div style={{ display: 'flex', gap: '0.6rem' }}>
+                <button style={{
+                  flex: 1, padding: '0.6rem', borderRadius: 10,
+                  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                  color: 'rgba(255,255,255,0.7)', fontSize: '0.8rem', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+                }}>Share Issue</button>
+                <button style={{
+                  flex: 1, padding: '0.6rem', borderRadius: 10,
+                  background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
+                  border: '1px solid rgba(99,102,241,0.3)',
+                  color: '#a5b4fc', fontSize: '0.8rem', fontWeight: 600,
+                  cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+                }}>Follow Updates</button>
               </div>
             </div>
           </div>
@@ -372,5 +354,21 @@ const IssueDetails = () => {
     </div>
   );
 };
+
+const glassCard = {
+  background: 'rgba(255,255,255,0.03)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 20,
+  padding: '1.75rem',
+  backdropFilter: 'blur(12px)',
+};
+
+const btnStyle = (color) => ({
+  background: `linear-gradient(135deg, ${color}, ${color}cc)`,
+  border: 'none', borderRadius: 12,
+  padding: '0.75rem 1.8rem',
+  color: '#fff', fontWeight: 700, fontSize: '0.9rem',
+  cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+});
 
 export default IssueDetails;

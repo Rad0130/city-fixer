@@ -1,271 +1,372 @@
 import { motion as Motion } from 'framer-motion';
 
 const AboutUsPage = () => {
-  const fadeInUp = {
-    initial: { opacity: 0, y: 60 },
-    animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+  const fadeUp = {
+    initial: { opacity: 0, y: 40 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
+    transition: { duration: 0.6 },
   };
 
-  const staggerContainer = {
-    animate: {
-      transition: {
-        staggerChildren: 0.2
-      }
-    }
+  const stagger = {
+    initial: {},
+    whileInView: { transition: { staggerChildren: 0.15 } },
+    viewport: { once: true },
   };
 
-  const slideInLeft = {
-    initial: { opacity: 0, x: -100 },
-    animate: { opacity: 1, x: 0 },
-    transition: { duration: 0.8, ease: "easeOut" }
-  };
-
-  const slideInRight = {
-    initial: { opacity: 0, x: 100 },
-    animate: { opacity: 1, x: 0 },
-    transition: { duration: 0.8, ease: "easeOut" }
-  };
-
-  const scaleUp = {
-    initial: { opacity: 0, scale: 0.8 },
-    animate: { opacity: 1, scale: 1 },
-    transition: { duration: 0.5 }
+  const cardVariant = {
+    initial: { opacity: 0, y: 30 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true },
   };
 
   return (
-    <div className="min-h-screen mt-16 bg-gradient-to-b from-blue-50 to-white">
-      {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-700 text-white">
-        <div className="container mx-auto px-4">
-          <Motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">
-              About <span className="bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">CityFix</span>
-            </h1>
-            <p className="text-xl md:text-2xl opacity-90 mb-8">
-              Building better cities through community collaboration and technology
-            </p>
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 40%, #0a1628 70%, #0f0a2e 100%)',
+      fontFamily: "'DM Sans', sans-serif",
+      overflowX: 'hidden',
+    }}>
+      {/* ── GLOBAL BACKGROUND ── */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '-15%', left: '-10%', width: '65vw', height: '65vw', maxWidth: 850, background: 'radial-gradient(circle, rgba(99,102,241,0.14) 0%, transparent 70%)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', bottom: '-10%', right: '-10%', width: '55vw', height: '55vw', maxWidth: 700, background: 'radial-gradient(circle, rgba(236,72,153,0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', top: '50%', left: '60%', width: '35vw', height: '35vw', maxWidth: 450, background: 'radial-gradient(circle, rgba(6,182,212,0.07) 0%, transparent 70%)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+      </div>
+
+      {/* ── HERO ── */}
+      <section style={{ paddingTop: '8rem', paddingBottom: '6rem', position: 'relative', zIndex: 1, textAlign: 'center', padding: '8rem 1rem 6rem' }}>
+        <Motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
+          <div style={{
+            display: 'inline-block',
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(236,72,153,0.2))',
+            border: '1px solid rgba(99,102,241,0.4)',
+            borderRadius: 999, padding: '0.35rem 1.2rem', marginBottom: '1.5rem',
+          }}>
+            <span style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.18em', color: '#a5b4fc', textTransform: 'uppercase' }}>✦ Our Story</span>
+          </div>
+
+          <h1 style={{
+            fontFamily: "'Syne', sans-serif", fontWeight: 800,
+            fontSize: 'clamp(2.8rem, 7vw, 5rem)', lineHeight: 1.1,
+            marginBottom: '1.5rem',
+          }}>
+            <span style={{ background: 'linear-gradient(135deg, #fff 40%, #a5b4fc 70%, #f9a8d4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              About
+            </span>{' '}
+            <span style={{ background: 'linear-gradient(135deg, #6366f1, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+              CityFix
+            </span>
+          </h1>
+
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 'clamp(1rem,2vw,1.2rem)', maxWidth: 560, margin: '0 auto', lineHeight: 1.75 }}>
+            Building better cities through community collaboration, transparency, and the power of technology.
+          </p>
+        </Motion.div>
+
+        {/* Hero stats strip */}
+        <Motion.div
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}
+          style={{
+            display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem',
+            marginTop: '3rem',
+          }}
+        >
+          {[
+            { val: '2020', label: 'Founded', color: '#818cf8' },
+            { val: '50+', label: 'Cities', color: '#34d399' },
+            { val: '10K+', label: 'Issues Fixed', color: '#f472b6' },
+            { val: '85%', label: 'Resolution Rate', color: '#22d3ee' },
+          ].map((s) => (
+            <div key={s.label} style={{
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.09)',
+              borderRadius: 16, padding: '1.2rem 2rem',
+              backdropFilter: 'blur(12px)', textAlign: 'center', minWidth: 130,
+            }}>
+              <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: '2rem', color: s.color, textShadow: `0 0 30px ${s.color}60` }}>{s.val}</div>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginTop: '0.2rem' }}>{s.label}</div>
+            </div>
+          ))}
+        </Motion.div>
+      </section>
+
+      {/* ── OUR STORY ── */}
+      <section style={{ position: 'relative', zIndex: 1, padding: '4rem clamp(1rem,6vw,5rem)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem', alignItems: 'center' }}>
+
+          {/* Left text */}
+          <Motion.div {...fadeUp}>
+            <div style={{
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.09)',
+              borderRadius: 24, padding: '2.5rem',
+              backdropFilter: 'blur(12px)',
+              position: 'relative', overflow: 'hidden',
+            }}>
+              {/* Accent glow */}
+              <div style={{ position: 'absolute', top: -40, left: -40, width: 200, height: 200, background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
+              <div style={{
+                display: 'inline-block', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+                borderRadius: 999, padding: '0.25rem 0.9rem', marginBottom: '1.2rem',
+              }}>
+                <span style={{ color: '#818cf8', fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.12em' }}>OUR STORY</span>
+              </div>
+              <h2 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 'clamp(1.8rem,3vw,2.5rem)', color: '#fff', lineHeight: 1.2, marginBottom: '1.2rem' }}>
+                Where It All Began
+              </h2>
+              <p style={{ color: 'rgba(255,255,255,0.6)', lineHeight: 1.8, marginBottom: '1rem', fontSize: '0.95rem' }}>
+                Founded in 2020, CityFix began as a simple idea — what if citizens could easily report public infrastructure issues and track their resolution in real-time?
+              </p>
+              <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.8, fontSize: '0.95rem' }}>
+                Today, we've grown into a comprehensive platform connecting thousands of citizens with local authorities across 50+ cities, resolving over 10,000 issues and making communities safer and better for everyone.
+              </p>
+            </div>
+          </Motion.div>
+
+          {/* Right: milestone grid */}
+          <Motion.div {...fadeUp} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            {[
+              { year: '2020', event: 'Platform launched in Dhaka', color: 'linear-gradient(135deg, #6366f1, #8b5cf6)', glow: 'rgba(99,102,241,0.4)' },
+              { year: '2021', event: 'Expanded to 10 cities', color: 'linear-gradient(135deg, #8b5cf6, #ec4899)', glow: 'rgba(139,92,246,0.4)' },
+              { year: '2022', event: 'Reached 5,000 resolved issues', color: 'linear-gradient(135deg, #ec4899, #f97316)', glow: 'rgba(236,72,153,0.4)' },
+              { year: '2023', event: 'Premium boost feature launched', color: 'linear-gradient(135deg, #10b981, #06b6d4)', glow: 'rgba(16,185,129,0.4)' },
+            ].map((m, i) => (
+              <Motion.div
+                key={m.year}
+                initial={{ opacity: 0, scale: 0.85 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                whileHover={{ scale: 1.04 }}
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  borderRadius: 18, padding: '1.5rem',
+                  backdropFilter: 'blur(12px)',
+                  position: 'relative', overflow: 'hidden',
+                }}
+              >
+                <div style={{ position: 'absolute', inset: 0, background: m.color, opacity: 0.07, borderRadius: 18 }} />
+                <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: '2rem', color: '#fff', marginBottom: '0.4rem', textShadow: `0 0 20px ${m.glow}` }}>{m.year}</div>
+                <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.82rem', lineHeight: 1.5 }}>{m.event}</div>
+              </Motion.div>
+            ))}
           </Motion.div>
         </div>
       </section>
 
-      {/* Our Story */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <Motion.div
-              variants={slideInLeft}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-            >
-              <div className="relative">
-                <div className="w-96 h-96 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 opacity-20 absolute -top-8 -left-8"></div>
-                <div className="relative bg-white p-8 rounded-3xl shadow-2xl">
-                  <h2 className="text-4xl font-bold text-gray-800 mb-6">Our Story</h2>
-                  <p className="text-gray-600 text-lg leading-relaxed mb-4">
-                    Founded in 2020, CityFix began as a simple idea: what if citizens could easily report
-                    public infrastructure issues and track their resolution in real-time?
-                  </p>
-                  <p className="text-gray-600 text-lg leading-relaxed">
-                    Today, we've grown into a comprehensive platform connecting thousands of citizens
-                    with local authorities across 50+ cities, resolving over 10,000 issues and
-                    making communities safer and better for everyone.
-                  </p>
-                </div>
-              </div>
-            </Motion.div>
+      {/* ── MISSION & VISION ── */}
+      <section style={{ position: 'relative', zIndex: 1, padding: '5rem clamp(1rem,6vw,5rem)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <Motion.div {...fadeUp} style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <div style={{
+              display: 'inline-block',
+              background: 'linear-gradient(135deg, rgba(6,182,212,0.2), rgba(99,102,241,0.2))',
+              border: '1px solid rgba(6,182,212,0.35)',
+              borderRadius: 999, padding: '0.35rem 1.2rem', marginBottom: '1rem',
+            }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.18em', color: '#22d3ee', textTransform: 'uppercase' }}>✦ Purpose</span>
+            </div>
+            <h2 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#fff' }}>
+              Mission &{' '}
+              <span style={{ background: 'linear-gradient(135deg, #22d3ee, #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Vision</span>
+            </h2>
+          </Motion.div>
 
-            <Motion.div
-              variants={slideInRight}
-              initial="initial"
-              whileInView="animate"
-              viewport={{ once: true }}
-            >
-              <div className="grid grid-cols-2 gap-6">
-                {[2020, 2021, 2022, 2023].map((year, index) => (
-                  <Motion.div
-                    key={year}
-                    initial={{ opacity: 0, scale: 0 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ scale: 1.05 }}
-                    className="bg-gradient-to-br from-blue-500 to-purple-600 p-6 rounded-2xl text-white text-center shadow-lg"
-                  >
-                    <div className="text-3xl font-bold mb-2">{year}</div>
-                    <div className="text-sm opacity-90">Milestone Achieved</div>
-                  </Motion.div>
-                ))}
-              </div>
-            </Motion.div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            {[
+              {
+                icon: '⚡',
+                title: 'Our Mission',
+                text: 'To empower every citizen to improve city infrastructure through transparency, technology, and community action.',
+                color: 'linear-gradient(135deg, #10b981, #06b6d4)',
+                glow: 'rgba(16,185,129,0.25)',
+                border: 'rgba(16,185,129,0.25)',
+              },
+              {
+                icon: '🔭',
+                title: 'Our Vision',
+                text: 'A world where no public issue goes unresolved — where technology bridges the gap between citizens and government.',
+                color: 'linear-gradient(135deg, #f97316, #ec4899)',
+                glow: 'rgba(249,115,22,0.25)',
+                border: 'rgba(249,115,22,0.25)',
+              },
+            ].map((item) => (
+              <Motion.div
+                key={item.title}
+                {...fadeUp}
+                whileHover={{ y: -6 }}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${item.border}`,
+                  borderRadius: 24, padding: '2.5rem',
+                  backdropFilter: 'blur(12px)',
+                  position: 'relative', overflow: 'hidden',
+                }}
+              >
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: item.color, borderRadius: '24px 24px 0 0' }} />
+                <div style={{ width: 56, height: 56, borderRadius: 14, background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.6rem', marginBottom: '1.3rem', boxShadow: `0 0 25px ${item.glow}` }}>
+                  {item.icon}
+                </div>
+                <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: '1.4rem', color: '#fff', marginBottom: '0.75rem' }}>{item.title}</h3>
+                <p style={{ color: 'rgba(255,255,255,0.55)', lineHeight: 1.8, fontSize: '0.95rem' }}>{item.text}</p>
+              </Motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Mission & Vision */}
-      <section className="py-20 bg-gradient-to-r from-gray-50 to-blue-50">
-        <div className="container mx-auto px-4">
-          <Motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-2 gap-12"
-          >
-            <Motion.div
-              variants={fadeInUp}
-              className="bg-gradient-to-br from-green-500 to-teal-600 p-8 rounded-3xl text-white shadow-xl"
-            >
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-3xl font-bold mb-4">Our Mission</h3>
-              <p className="text-lg opacity-90">
-                To empower every citizen to improve city infrastructure through transparency and technology.
-              </p>
-            </Motion.div>
-
-            <Motion.div
-              variants={fadeInUp}
-              className="bg-gradient-to-br from-orange-500 to-red-600 p-8 rounded-3xl text-white shadow-xl"
-            >
-              <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center mb-6">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <h3 className="text-3xl font-bold mb-4">Our Vision</h3>
-              <p className="text-lg opacity-90">
-                A world where no public issue goes unresolved — where technology builds smarter cities.
-              </p>
-            </Motion.div>
-          </Motion.div>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <Motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.8 }}
-            className="text-center mb-16"
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-              Meet Our <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Team</span>
+      {/* ── TEAM ── */}
+      <section style={{ position: 'relative', zIndex: 1, padding: '5rem clamp(1rem,6vw,5rem)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <Motion.div {...fadeUp} style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+            <div style={{
+              display: 'inline-block',
+              background: 'linear-gradient(135deg, rgba(236,72,153,0.2), rgba(139,92,246,0.2))',
+              border: '1px solid rgba(236,72,153,0.35)',
+              borderRadius: 999, padding: '0.35rem 1.2rem', marginBottom: '1rem',
+            }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.18em', color: '#f472b6', textTransform: 'uppercase' }}>✦ The People</span>
+            </div>
+            <h2 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#fff', marginBottom: '0.75rem' }}>
+              Meet Our{' '}
+              <span style={{ background: 'linear-gradient(135deg, #f472b6, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Team</span>
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Passionate individuals dedicated to making cities better
+            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '1rem', maxWidth: 460, margin: '0 auto' }}>
+              Passionate individuals dedicated to making cities better for everyone.
             </p>
           </Motion.div>
 
-          <Motion.div
-            variants={staggerContainer}
-            initial="initial"
-            whileInView="animate"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
-          >
+          <Motion.div variants={stagger} initial="initial" whileInView="animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
             {[
-              { name: "Alex Chen", role: "Founder & CEO", color: "from-blue-500 to-cyan-500" },
-              { name: "Sarah Johnson", role: "Head of Operations", color: "from-purple-500 to-pink-500" },
-              { name: "Marcus Rivera", role: "Lead Developer", color: "from-green-500 to-teal-500" }
+              { name: 'Alex Chen', role: 'Founder & CEO', emoji: '👨‍💼', bio: 'Urban tech visionary with 10+ years in civic innovation.', color: 'linear-gradient(135deg, #6366f1, #22d3ee)', glow: 'rgba(99,102,241,0.4)' },
+              { name: 'Sarah Johnson', role: 'Head of Operations', emoji: '👩‍💻', bio: 'Operations expert who keeps the city fix engine running.', color: 'linear-gradient(135deg, #ec4899, #8b5cf6)', glow: 'rgba(236,72,153,0.4)' },
+              { name: 'Marcus Rivera', role: 'Lead Developer', emoji: '🧑‍🔧', bio: 'Full-stack wizard behind the seamless CityFix experience.', color: 'linear-gradient(135deg, #10b981, #06b6d4)', glow: 'rgba(16,185,129,0.4)' },
             ].map((member) => (
               <Motion.div
                 key={member.name}
-                variants={scaleUp}
-                whileHover={{ y: -10 }}
-                className="text-center"
+                variants={cardVariant}
+                whileHover={{ y: -8 }}
+                transition={{ duration: 0.3 }}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 24, padding: '2.2rem',
+                  backdropFilter: 'blur(12px)', textAlign: 'center',
+                  position: 'relative', overflow: 'hidden',
+                }}
               >
-                <div className={`w-48 h-48 rounded-full bg-gradient-to-r ${member.color} mx-auto mb-6 flex items-center justify-center text-white text-4xl font-bold shadow-xl`}>
-                  {member.name.charAt(0)}
+                {/* Glow blob */}
+                <div style={{ position: 'absolute', top: -30, left: '50%', transform: 'translateX(-50%)', width: 160, height: 160, background: `radial-gradient(circle, ${member.glow} 0%, transparent 70%)`, borderRadius: '50%', pointerEvents: 'none' }} />
+
+                {/* Avatar */}
+                <div style={{
+                  width: 90, height: 90, borderRadius: '50%',
+                  background: member.color,
+                  margin: '0 auto 1.2rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '2.2rem',
+                  boxShadow: `0 0 30px ${member.glow}`,
+                  border: '3px solid rgba(255,255,255,0.1)',
+                }}>
+                  {member.emoji}
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">{member.name}</h3>
-                <p className="text-gray-600">{member.role}</p>
+
+                <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: '1.2rem', color: '#fff', marginBottom: '0.3rem' }}>{member.name}</h3>
+                <div style={{
+                  display: 'inline-block', marginBottom: '0.9rem',
+                  background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+                  borderRadius: 999, padding: '0.2rem 0.8rem',
+                  color: '#a5b4fc', fontSize: '0.78rem', fontWeight: 600,
+                }}>{member.role}</div>
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.875rem', lineHeight: 1.65 }}>{member.bio}</p>
               </Motion.div>
             ))}
           </Motion.div>
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-blue-50">
-        <div className="container mx-auto px-4">
-          <Motion.h2
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl font-bold text-center text-gray-800 mb-16"
-          >
-            Our <span className="bg-gradient-to-r from-indigo-600 to-blue-600 bg-clip-text text-transparent">Core Values</span>
-          </Motion.h2>
+      {/* ── CORE VALUES ── */}
+      <section style={{ position: 'relative', zIndex: 1, padding: '5rem clamp(1rem,6vw,5rem)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+          <Motion.div {...fadeUp} style={{ textAlign: 'center', marginBottom: '3rem' }}>
+            <h2 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 'clamp(1.8rem,4vw,2.8rem)', color: '#fff', marginBottom: '0.5rem' }}>
+              Our{' '}
+              <span style={{ background: 'linear-gradient(135deg, #818cf8, #22d3ee)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Core Values</span>
+            </h2>
+            <div style={{ width: 60, height: 3, background: 'linear-gradient(90deg, #6366f1, #22d3ee)', margin: '0 auto', borderRadius: 99 }} />
+          </Motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.2rem' }}>
             {[
-              {
-                title: "Transparency",
-                description: "Open communication and clear tracking at every step",
-                icon: "👁️",
-                color: "from-blue-400 to-indigo-500"
-              },
-              {
-                title: "Community",
-                description: "Power of collective action and shared responsibility",
-                icon: "🤝",
-                color: "from-green-400 to-emerald-500"
-              },
-              {
-                title: "Innovation",
-                description: "Leveraging technology for smarter city solutions",
-                icon: "💡",
-                color: "from-purple-400 to-pink-500"
-              }
-            ].map((value, index) => (
+              { icon: '👁️', title: 'Transparency', text: 'Open communication and clear tracking at every step of the process.', color: '#818cf8', bg: 'rgba(129,140,248,0.08)', border: 'rgba(129,140,248,0.2)' },
+              { icon: '🤝', title: 'Community', text: 'The power of collective action and shared civic responsibility.', color: '#34d399', bg: 'rgba(52,211,153,0.08)', border: 'rgba(52,211,153,0.2)' },
+              { icon: '💡', title: 'Innovation', text: 'Leveraging cutting-edge technology for smarter city solutions.', color: '#f472b6', bg: 'rgba(244,114,182,0.08)', border: 'rgba(244,114,182,0.2)' },
+            ].map((v, i) => (
               <Motion.div
-                key={value.title}
-                initial={{ opacity: 0, y: 50 }}
+                key={v.title}
+                initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                whileHover={{ scale: 1.05 }}
-                className={`bg-gradient-to-br ${value.color} p-8 rounded-3xl text-white shadow-xl`}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                whileHover={{ scale: 1.03 }}
+                style={{
+                  background: v.bg, border: `1px solid ${v.border}`,
+                  borderRadius: 20, padding: '2rem',
+                  backdropFilter: 'blur(10px)',
+                }}
               >
-                <div className="text-5xl mb-6">{value.icon}</div>
-                <h3 className="text-2xl font-bold mb-4">{value.title}</h3>
-                <p className="opacity-90">{value.description}</p>
+                <div style={{ fontSize: '2.2rem', marginBottom: '1rem' }}>{v.icon}</div>
+                <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: '1.15rem', color: v.color, marginBottom: '0.6rem' }}>{v.title}</h3>
+                <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.875rem', lineHeight: 1.7 }}>{v.text}</p>
               </Motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20">
+      {/* ── CTA ── */}
+      <section style={{ position: 'relative', zIndex: 1, padding: '4rem clamp(1rem,6vw,5rem) 6rem' }}>
         <Motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="max-w-4xl mx-auto bg-gradient-to-r from-indigo-600 to-purple-700 rounded-3xl p-12 text-center text-white shadow-2xl"
+          style={{
+            maxWidth: 750, margin: '0 auto', textAlign: 'center',
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 28, padding: 'clamp(2.5rem,6vw,4rem)',
+            backdropFilter: 'blur(20px)',
+            position: 'relative', overflow: 'hidden',
+          }}
         >
-          <h2 className="text-4xl font-bold mb-6">Join Our Movement</h2>
-          <p className="text-xl opacity-90 mb-8 max-w-2xl mx-auto">
-            Together, we can build cleaner, safer, and better cities for everyone.
-          </p>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: 'linear-gradient(90deg, #6366f1, #ec4899, #22d3ee)', borderRadius: '28px 28px 0 0' }} />
+          <div style={{ position: 'absolute', top: -60, left: '50%', transform: 'translateX(-50%)', width: 300, height: 300, background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
 
-          <Motion.button
+          <h2 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: 'clamp(1.6rem,3vw,2.4rem)', color: '#fff', marginBottom: '1rem' }}>
+            Join Our Movement
+          </h2>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '1rem', lineHeight: 1.75, maxWidth: 460, margin: '0 auto 2.5rem' }}>
+            Together, we can build cleaner, safer, and better cities for everyone — one report at a time.
+          </p>
+          <Motion.a
+            href="/reportIssue"
             whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="bg-white text-indigo-700 font-bold px-8 py-4 rounded-full text-lg hover:shadow-2xl transition-all"
+            whileTap={{ scale: 0.97 }}
+            style={{
+              display: 'inline-block',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+              padding: '0.9rem 2.5rem', borderRadius: 999,
+              textDecoration: 'none',
+              boxShadow: '0 0 35px rgba(99,102,241,0.45)',
+            }}
           >
-            Start Reporting Issues
-          </Motion.button>
+            Start Reporting Issues →
+          </Motion.a>
         </Motion.div>
       </section>
     </div>
