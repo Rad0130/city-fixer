@@ -284,7 +284,7 @@ const IssueDetails = () => {
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                     padding: '0.85rem', borderRadius: 12, fontWeight: 700, fontSize: '0.9rem',
                     cursor: isHigh ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
-                    // border: 'none', fontFamily: "'DM Sans',sans-serif",
+                    border: 'none', fontFamily: "'DM Sans',sans-serif",
                     background: isHigh
                       ? 'rgba(52,211,153,0.12)'
                       : 'linear-gradient(135deg, #6366f1, #8b5cf6)',

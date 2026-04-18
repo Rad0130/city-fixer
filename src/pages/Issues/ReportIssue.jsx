@@ -184,7 +184,7 @@ const ReportIssue = () => {
               cursor: 'pointer', boxShadow: '0 0 30px rgba(99,102,241,0.45)',
               transition: 'all 0.2s', fontFamily: "'DM Sans',sans-serif",
             }}>
-              Submit Report
+              🚩 Submit Report
             </button>
           </form>
         </div>
