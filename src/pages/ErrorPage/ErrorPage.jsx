@@ -2,47 +2,88 @@ import React from 'react';
 import { Link } from 'react-router';
 
 const ErrorPage = () => {
-    return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900 px-4">
-            <div className="text-center">
-                {/* 404 Title/Code */}
-                <h1 className="text-9xl font-extrabold text-indigo-600 dark:text-indigo-400">
-                    404
-                </h1>
-                
-                {/* Error Message */}
-                <p className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mt-4 mb-2">
-                    Page Not Found
-                </p>
-                <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-                    Oops! The URL you requested seems to be incorrect or the page has been moved.
-                    Don't worry, we'll help you get back on track.
-                </p>
-                
-                {/* Go Back Home Button */}
-                <Link 
-                    to="/" 
-                    className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out"
-                >
-                    <svg 
-                        className="w-5 h-5 mr-2" 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24" 
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path 
-                            strokeLinecap="round" 
-                            strokeLinejoin="round" 
-                            strokeWidth="2" 
-                            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0h6"
-                        ></path>
-                    </svg>
-                    Go Back to Home
-                </Link>
-            </div>
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 40%, #0a1628 70%, #0f0a2e 100%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: '2rem', fontFamily: "'DM Sans', sans-serif",
+      position: 'relative', overflow: 'hidden', textAlign: 'center',
+    }}>
+      {/* Background orbs */}
+      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
+        <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', width: '60vw', height: '60vw', maxWidth: 700, background: 'radial-gradient(circle, rgba(236,72,153,0.12) 0%, transparent 70%)', borderRadius: '50%' }} />
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+      </div>
+
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 520 }}>
+        {/* 404 */}
+        <div style={{ position: 'relative', marginBottom: '1rem' }}>
+          <div style={{
+            fontFamily: "'Syne', sans-serif", fontWeight: 800,
+            fontSize: 'clamp(7rem, 20vw, 12rem)', lineHeight: 1,
+            background: 'linear-gradient(135deg, rgba(99,102,241,0.3) 0%, rgba(236,72,153,0.2) 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            userSelect: 'none',
+            filter: 'drop-shadow(0 0 60px rgba(99,102,241,0.3))',
+          }}>404</div>
+          {/* Glitch lines */}
+          <div style={{
+            position: 'absolute', top: '40%', left: 0, right: 0,
+            height: 2, background: 'linear-gradient(90deg, transparent, #6366f1, #ec4899, transparent)',
+            opacity: 0.6,
+          }} />
         </div>
-    );
+
+        <h2 style={{
+          fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(1.4rem, 3vw, 2rem)',
+          color: '#fff', marginBottom: '1rem',
+        }}>
+          Page Not Found
+        </h2>
+
+        <p style={{
+          color: 'rgba(255,255,255,0.45)', fontSize: '0.95rem', lineHeight: 1.75,
+          marginBottom: '2.5rem', maxWidth: 380, margin: '0 auto 2.5rem',
+        }}>
+          Oops! The URL you requested seems to be incorrect or the page has been moved. Let's get you back on track.
+        </p>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link to="/" style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            color: '#fff', fontWeight: 700, fontSize: '0.95rem',
+            padding: '0.85rem 2rem', borderRadius: 12, textDecoration: 'none',
+            boxShadow: '0 0 30px rgba(99,102,241,0.45)',
+          }}>
+            🏠 Go Home
+          </Link>
+          <Link to="/allissues" style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            color: 'rgba(255,255,255,0.75)', fontWeight: 600, fontSize: '0.95rem',
+            padding: '0.85rem 2rem', borderRadius: 12, textDecoration: 'none',
+          }}>
+            Browse Issues
+          </Link>
+        </div>
+
+        {/* Fun decoration */}
+        <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{
+              width: 8, height: 8, borderRadius: '50%',
+              background: i === 2 ? '#6366f1' : 'rgba(255,255,255,0.15)',
+              boxShadow: i === 2 ? '0 0 12px #6366f1' : 'none',
+            }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default ErrorPage;
