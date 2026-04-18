@@ -34,7 +34,6 @@ const ReportIssue = () => {
       navigate('/allissues');
     } catch (error) {
       Swal.fire({ icon: 'error', title: 'Upload Failed', text: 'Something went wrong!', background: '#0d1117', color: '#fff' });
-      console.log(error);
     } finally { setLoading(false); }
   };
 
