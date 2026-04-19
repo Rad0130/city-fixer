@@ -2,10 +2,18 @@ import React from 'react';
 import logo from '../assets/logo.png';
 import { Link, NavLink, useNavigate } from 'react-router';
 import useAuth from '../Hooks/useAuth';
+import useRole from '../Hooks/useRole';
 
 const Navbar = () => {
   const { user, logOut } = useAuth();
+  const { isAdmin, isStaff, roleLoading } = useRole();
   const navigate = useNavigate();
+
+  const getDashboardPath = () => {
+    if (isAdmin) return '/admin';
+    if (isStaff) return '/staff';
+    return '/dashboard';
+  };
 
   const handleLogOut = () => {
     logOut()
@@ -49,10 +57,7 @@ const Navbar = () => {
         height: 64,
       }}>
         {/* Logo */}
-        <Link to="/" style={{
-          display: 'flex', alignItems: 'center', gap: '0.75rem',
-          textDecoration: 'none',
-        }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
             background: 'linear-gradient(135deg, #6366f1, #ec4899)',
@@ -75,9 +80,7 @@ const Navbar = () => {
         </Link>
 
         {/* Desktop Links */}
-        <ul style={{
-          listStyle: 'none', margin: 0, padding: 0,
-        }} className="hidden lg:flex items-center gap-2">
+        <ul style={{ listStyle: 'none', margin: 0, padding: 0 }} className="hidden lg:flex items-center gap-2">
           {links}
         </ul>
 
@@ -94,39 +97,65 @@ const Navbar = () => {
                 <img src={user.photoURL} alt={user.displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
               <ul tabIndex="-1" className="dropdown-content" style={{
-                background: 'rgba(13,17,30,0.95)',
+                background: 'rgba(13,17,30,0.97)',
                 backdropFilter: 'blur(20px)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 16, padding: '0.75rem',
-                width: 220, marginTop: '0.5rem',
+                width: 240, marginTop: '0.5rem',
                 boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
-                listStyle: 'none',
+                listStyle: 'none', zIndex: 9999,
               }}>
+                {/* User info */}
                 <li style={{ padding: '0.5rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: '0.5rem' }}>
-                  <span style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{user.displayName}</span>
+                  <div style={{ color: '#fff', fontWeight: 600, fontSize: '0.9rem' }}>{user.displayName}</div>
                   <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: 2 }}>{user.email}</div>
+                  {/* Role badge */}
+                  {!roleLoading && (
+                    <div style={{
+                      display: 'inline-block', marginTop: '0.4rem',
+                      background: isAdmin ? 'rgba(244,114,182,0.15)' : isStaff ? 'rgba(52,211,153,0.15)' : 'rgba(129,140,248,0.15)',
+                      border: `1px solid ${isAdmin ? 'rgba(244,114,182,0.3)' : isStaff ? 'rgba(52,211,153,0.3)' : 'rgba(129,140,248,0.3)'}`,
+                      borderRadius: 999, padding: '0.15rem 0.6rem',
+                      color: isAdmin ? '#f472b6' : isStaff ? '#34d399' : '#818cf8',
+                      fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em',
+                    }}>
+                      {isAdmin ? '🛡️ Admin' : isStaff ? '🔧 Staff' : '👤 Citizen'}
+                    </div>
+                  )}
                 </li>
+
+                {/* Dashboard link */}
                 <li style={{ marginBottom: '0.25rem' }}>
-                  <Link to="/dashboard" style={{
+                  <Link to={getDashboardPath()} style={{
                     display: 'block', padding: '0.5rem 0.75rem', borderRadius: 8,
                     color: 'rgba(255,255,255,0.75)', fontSize: '0.875rem',
-                    textDecoration: 'none', transition: 'all 0.2s',
-                  }}>📊 Dashboard</Link>
+                    textDecoration: 'none',
+                  }}>
+                    📊 Dashboard
+                  </Link>
                 </li>
-                <li style={{ marginBottom: '0.25rem' }}>
-                  <Link to="/reportIssue" style={{
-                    display: 'block', padding: '0.5rem 0.75rem', borderRadius: 8,
-                    color: 'rgba(255,255,255,0.75)', fontSize: '0.875rem',
-                    textDecoration: 'none', transition: 'all 0.2s',
-                  }}>🚩 Report Issue</Link>
-                </li>
+
+                {/* Report issue (citizens only) */}
+                {!isAdmin && !isStaff && (
+                  <li style={{ marginBottom: '0.25rem' }}>
+                    <Link to="/reportIssue" style={{
+                      display: 'block', padding: '0.5rem 0.75rem', borderRadius: 8,
+                      color: 'rgba(255,255,255,0.75)', fontSize: '0.875rem',
+                      textDecoration: 'none',
+                    }}>
+                      🚩 Report Issue
+                    </Link>
+                  </li>
+                )}
+
+                {/* Logout */}
                 <li style={{ marginTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.07)', paddingTop: '0.5rem' }}>
                   <button onClick={handleLogOut} style={{
                     width: '100%', padding: '0.5rem 0.75rem', borderRadius: 8,
                     background: 'rgba(236,72,153,0.15)',
                     border: '1px solid rgba(236,72,153,0.3)',
                     color: '#f472b6', fontSize: '0.875rem', fontWeight: 600,
-                    cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left',
+                    cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif",
                   }}>
                     ↩ Log Out
                   </button>
@@ -139,20 +168,15 @@ const Navbar = () => {
                 padding: '0.5rem 1.2rem', borderRadius: 999,
                 border: '1px solid rgba(255,255,255,0.18)',
                 color: 'rgba(255,255,255,0.8)', fontSize: '0.875rem', fontWeight: 600,
-                textDecoration: 'none', transition: 'all 0.2s',
-              }}>
-                Login
-              </Link>
+                textDecoration: 'none',
+              }}>Login</Link>
               <Link to="/register" style={{
                 padding: '0.5rem 1.2rem', borderRadius: 999,
                 background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 color: '#fff', fontSize: '0.875rem', fontWeight: 600,
                 textDecoration: 'none',
                 boxShadow: '0 0 20px rgba(99,102,241,0.4)',
-                transition: 'all 0.2s',
-              }}>
-                Register
-              </Link>
+              }}>Register</Link>
             </div>
           )}
 
@@ -170,13 +194,14 @@ const Navbar = () => {
               </svg>
             </div>
             <ul tabIndex="-1" className="dropdown-content" style={{
-              background: 'rgba(13,17,30,0.95)',
+              background: 'rgba(13,17,30,0.97)',
               backdropFilter: 'blur(20px)',
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 16, padding: '0.75rem',
               width: 200, marginTop: '0.5rem',
               listStyle: 'none',
               boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+              zIndex: 9999,
             }}>
               {links}
             </ul>

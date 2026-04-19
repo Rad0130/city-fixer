@@ -9,19 +9,23 @@ const useRole = () => {
   const { data, isLoading } = useQuery({
     queryKey: ['userRole', user?.email],
     enabled: !!user?.email && !authLoading,
+    retry: 3,
+    retryDelay: 1000,
     queryFn: async () => {
-      const res = await axiosSecure.get(/users/role/${user.email});
-      return res.data; // { role, isBlocked, isPremium }
+      const res = await axiosSecure.get(`/users/role/${user.email}`);
+      return res.data;
     },
+    // Default to citizen if request fails — non-critical
+    onError: () => {},
   });
 
   return {
-    role: data?.role  || 'citizen',
+    role: data?.role || 'citizen',
     isBlocked: data?.isBlocked || false,
     isPremium: data?.isPremium || false,
     isAdmin: data?.role === 'admin',
     isStaff: data?.role === 'staff',
-    isCitizen: data?.role === 'citizen',
+    isCitizen: !data?.role || data?.role === 'citizen',
     roleLoading: isLoading || authLoading,
   };
 };
