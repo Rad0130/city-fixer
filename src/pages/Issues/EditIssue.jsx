@@ -81,6 +81,7 @@ const EditIssue = () => {
 
     } catch (error) {
       Swal.fire("Error", "Update failed", "error");
+      console.log(error);
     } finally {
       setLoading(false);
     }

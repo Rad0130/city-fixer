@@ -33,6 +33,7 @@ const ReportIssue = () => {
       Swal.fire({ icon: 'success', title: 'Issue Reported!', timer: 1500, showConfirmButton: false, background: '#0d1117', color: '#fff' });
       navigate('/allissues');
     } catch (error) {
+      console.error(error);
       Swal.fire({ icon: 'error', title: 'Upload Failed', text: 'Something went wrong!', background: '#0d1117', color: '#fff' });
     } finally { setLoading(false); }
   };

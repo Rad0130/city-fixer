@@ -64,6 +64,7 @@ const IssueDetails = () => {
       return res.data;
     },
   });
+  console.log(staffInfo);
 
   // ── Delete mutation ──
   const deleteMutation = useMutation({
@@ -127,7 +128,7 @@ const IssueDetails = () => {
       }
     };
     handlePostPayment();
-  }, [issue, searchParams]);
+  }, [searchParams, issue, refetch, queryClient, id, axiosSecure, user, setSearchParams]);
 
   // ── Loading / Error states ──
   if (isLoading) return <LoadingScreen text="Loading issue details..." />;
