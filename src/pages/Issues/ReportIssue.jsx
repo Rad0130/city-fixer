@@ -1,213 +1,326 @@
-// ─── ReportIssue.jsx ──────────────────────────────────────────────────────────
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import useAxiosSecure from '../../Hooks/useAxiosSecure';
-import { AlertCircle, MapPin, Mail, MessageSquare, Tag } from 'lucide-react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
+import useAxiosSecure from '../../Hooks/useAxiosSecure';
 import useAuth from '../../Hooks/useAuth';
+import useRole from '../../Hooks/useRole';
 import Swal from 'sweetalert2';
+
+const CATEGORIES = [
+  'Road & Pavement', 'Pothole', 'Water Supply', 'Water Logging',
+  'Drainage & Sewage', 'Electricity & Lighting', 'Street Lighting',
+  'Waste & Sanitation', 'Garbage Collection', 'Parks & Green Spaces',
+  'Public Transport', 'Traffic & Signals', 'Bridge & Overpass',
+  'Building & Construction', 'Illegal Construction', 'Footpath & Sidewalk',
+  'Noise Pollution', 'Air Pollution', 'Flooding', 'Tree Hazard',
+  'Vandalism', 'Public Property Damage', 'Gas Leak', 'Fire Hazard',
+  'School & Education Facility', 'Hospital & Health Facility',
+  'Market & Public Space', 'Other',
+];
+
+const inputStyle = {
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: '12px', padding: '0.75rem 1rem',
+  color: '#e2e8f0', fontSize: '0.9rem', outline: 'none',
+  width: '100%', boxSizing: 'border-box',
+  fontFamily: "'DM Sans', sans-serif",
+};
+const labelStyle = {
+  color: '#94a3b8', fontSize: '0.78rem', fontWeight: 700,
+  textTransform: 'uppercase', letterSpacing: '0.08em',
+  display: 'block', marginBottom: '0.4rem',
+};
+const fieldWrap = { display: 'flex', flexDirection: 'column', gap: '0.35rem' };
 
 const ReportIssue = () => {
   const axiosSecure = useAxiosSecure();
-  const { register, handleSubmit, formState: { errors } } = useForm();
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isPremium } = useRole();
+  const fileInputRef = useRef(null);
 
-  const onSubmit = async (data) => {
-    try {
-      setLoading(true);
-      const imageFile = data.image[0];
-      const formData = new FormData();
-      formData.append('image', imageFile);
-      const image_url = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_Image_Host}`;
-      const imageRes = await fetch(image_url, { method: 'POST', body: formData });
-      const imageData = await imageRes.json();
-      if (!imageData.success) throw new Error('Image upload failed');
-      const reportData = {
-        title: data.title, category: data.category, priority: data.priority,
-        location: data.location, reportedBy: user.email, description: data.description,
-        image: imageData.data.display_url, status: 'In Progress', upvotes: 0, upvotedBy: [], createdAt: new Date(),
-      };
-      await axiosSecure.post('/issues', reportData);
-      Swal.fire({ icon: 'success', title: 'Issue Reported!', timer: 1500, showConfirmButton: false, background: '#0d1117', color: '#fff' });
-      navigate('/allissues');
-    } catch (error) {
-      console.error(error);
-      Swal.fire({ icon: 'error', title: 'Upload Failed', text: 'Something went wrong!', background: '#0d1117', color: '#fff' });
-    } finally { setLoading(false); }
+  const [form, setForm] = useState({
+    title: '', description: '', category: '', location: '', priority: 'Normal',
+  });
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState('');
+
+  const set = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate type
+    if (!file.type.startsWith('image/')) {
+      Swal.fire({ title: 'Invalid file', text: 'Please select an image file (JPG, PNG, WEBP, GIF)', icon: 'warning', background: '#0d1117', color: '#fff' });
+      return;
+    }
+    // Validate size (max 10MB for imgbb)
+    if (file.size > 10 * 1024 * 1024) {
+      Swal.fire({ title: 'File too large', text: 'Image must be smaller than 10MB', icon: 'warning', background: '#0d1117', color: '#fff' });
+      return;
+    }
+
+    setImageFile(file);
+    // Create local preview URL
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
-  if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 40%, #0a1628 70%, #0f0a2e 100%)', flexDirection: 'column', gap: '1rem' }}>
-      <div style={{ width: 52, height: 52, borderRadius: '50%', border: '3px solid rgba(99,102,241,0.2)', borderTop: '3px solid #6366f1', animation: 'spin 0.8s linear infinite' }} />
-      <p style={{ color: 'rgba(255,255,255,0.5)', fontFamily: "'DM Sans',sans-serif" }}>Uploading your report...</p>
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
-  );
+  const uploadToImgbb = async (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    const url = `https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_Image_Host}`;
+    setUploadProgress('Uploading image...');
+    const res = await fetch(url, { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!data.success) throw new Error('Image upload failed');
+    setUploadProgress('');
+    return data.data.url;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!form.title.trim()) { Swal.fire({ title: 'Title is required', icon: 'warning', background: '#0d1117', color: '#fff' }); return; }
+    if (!form.category) { Swal.fire({ title: 'Please select a category', icon: 'warning', background: '#0d1117', color: '#fff' }); return; }
+    if (!form.location.trim()) { Swal.fire({ title: 'Location is required', icon: 'warning', background: '#0d1117', color: '#fff' }); return; }
+
+    setSubmitting(true);
+    try {
+      let imageUrl = '';
+      if (imageFile) {
+        setUploading(true);
+        imageUrl = await uploadToImgbb(imageFile);
+        setUploading(false);
+      }
+
+      await axiosSecure.post('/issues', {
+        ...form,
+        image: imageUrl,
+        reportedBy: user.email,
+        status: 'Pending',
+        upvotes: 0,
+        upvotedBy: [],
+      });
+
+      Swal.fire({
+        title: '🎉 Issue Reported!',
+        text: 'Your issue has been submitted successfully.',
+        icon: 'success', background: '#0d1117', color: '#fff', confirmButtonColor: '#6366f1',
+      });
+      navigate('/dashboard/myissues');
+    } catch (err) {
+      setUploading(false);
+      setUploadProgress('');
+      const msg = err?.response?.data?.message || err?.message || 'Failed to report issue';
+      Swal.fire({ title: 'Error', text: msg, icon: 'error', background: '#0d1117', color: '#fff' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const isLoading = submitting || uploading;
 
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 40%, #0a1628 70%, #0f0a2e 100%)',
-      paddingTop: '5.5rem', paddingBottom: '4rem',
+      background: 'linear-gradient(135deg, #0a0a1a 0%, #0d1b3e 50%, #0f0a2e 100%)',
       fontFamily: "'DM Sans', sans-serif",
-      position: 'relative',
+      paddingTop: '5rem', paddingBottom: '4rem',
     }}>
-      <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0 }}>
-        <div style={{ position: 'absolute', top: 0, right: 0, width: '45vw', height: '45vw', maxWidth: 600, background: 'radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)', borderRadius: '50%' }} />
-        <div style={{ position: 'absolute', bottom: 0, left: 0, width: '40vw', height: '40vw', maxWidth: 500, background: 'radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)', borderRadius: '50%' }} />
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-      </div>
+      <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 1.25rem' }}>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '0 1rem', position: 'relative', zIndex: 1 }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <div style={{
-            display: 'inline-block',
-            background: 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(6,182,212,0.2))',
-            border: '1px solid rgba(99,102,241,0.35)',
-            borderRadius: 999, padding: '0.35rem 1.2rem', marginBottom: '1rem',
-          }}>
-            <span style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.18em', color: '#a5b4fc', textTransform: 'uppercase' }}>✦ Submit Report</span>
-          </div>
-          <h1 style={{
-            fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 'clamp(1.8rem,4vw,2.5rem)',
-            background: 'linear-gradient(135deg, #fff 30%, #a5b4fc 60%, #22d3ee 90%)',
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-            marginBottom: '0.5rem',
-          }}>Report an Issue</h1>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.95rem' }}>Help us make your city better — every report counts.</p>
+        <div style={{ marginBottom: '2rem' }}>
+          <h1 style={{ color: '#f1f5f9', fontSize: '1.75rem', fontWeight: 800, margin: 0 }}>📝 Report an Issue</h1>
+          <p style={{ color: '#64748b', marginTop: '0.3rem', fontSize: '0.9rem' }}>
+            {isPremium ? '⭐ Premium — unlimited reports' : 'Free plan — limited to 3 reports. Upgrade for unlimited.'}
+          </p>
         </div>
 
-        {/* Form Card */}
-        <div style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: 24, overflow: 'hidden',
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
+        <form onSubmit={handleSubmit} style={{
+          background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: '20px', padding: '2rem',
+          display: 'flex', flexDirection: 'column', gap: '1.25rem',
         }}>
-          {/* Form header strip */}
-          <div style={{
-            background: 'linear-gradient(135deg, rgba(99,102,241,0.3), rgba(6,182,212,0.2))',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            padding: '1.2rem 2rem',
-            display: 'flex', alignItems: 'center', gap: '0.75rem',
-          }}>
-            <AlertCircle size={20} color="#a5b4fc" />
-            <div>
-              <h2 style={{ color: '#fff', fontWeight: 700, fontSize: '1rem', margin: 0, fontFamily: "'Syne',sans-serif" }}>Issue Details</h2>
-              <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem', margin: 0 }}>Fill in all fields accurately for faster resolution</p>
-            </div>
+
+          {/* Title */}
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Issue Title *</label>
+            <input value={form.title} onChange={e => set('title', e.target.value)}
+              placeholder="e.g. Large pothole on Main Street" style={inputStyle} />
           </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.3rem' }}>
-            {/* Title */}
-            <div>
-              <label style={labelStyle}>Issue Title</label>
-              <input {...register('title', { required: 'Title is required' })} placeholder="e.g., Broken streetlight near school" style={inputStyle(errors.title)} />
-              {errors.title && <p style={errMsg}>{errors.title.message}</p>}
-            </div>
+          {/* Category */}
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Category *</label>
+            <select value={form.category} onChange={e => set('category', e.target.value)}
+              style={{ ...inputStyle, cursor: 'pointer', background: 'rgba(13,17,30,0.8)' }}>
+              <option value="" style={{ background: '#0d1117' }}>— Select a category —</option>
+              {CATEGORIES.map(c => <option key={c} value={c} style={{ background: '#0d1117' }}>{c}</option>)}
+            </select>
+          </div>
 
-            {/* Category + Priority */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div>
-                <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Tag size={13} color="#818cf8" /> Category
-                </label>
-                <select {...register('category')} style={selectStyle}>
-                  <option value="Traffic">Traffic</option>
-                  <option value="Road Damage">Road Damage</option>
-                  <option value="Drainage">Drainage</option>
-                </select>
+          {/* Location */}
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Location *</label>
+            <input value={form.location} onChange={e => set('location', e.target.value)}
+              placeholder="e.g. Mirpur 10, Dhaka" style={inputStyle} />
+          </div>
+
+          {/* Priority */}
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Priority</label>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              {['Normal', 'High'].map(p => (
+                <button key={p} type="button" onClick={() => set('priority', p)} style={{
+                  flex: 1, padding: '0.65rem 1rem', borderRadius: '10px',
+                  border: `2px solid ${form.priority === p ? (p === 'High' ? 'rgba(239,68,68,0.5)' : 'rgba(99,102,241,0.5)') : 'rgba(255,255,255,0.08)'}`,
+                  background: form.priority === p ? (p === 'High' ? 'rgba(239,68,68,0.1)' : 'rgba(99,102,241,0.1)') : 'rgba(255,255,255,0.03)',
+                  color: form.priority === p ? (p === 'High' ? '#f87171' : '#818cf8') : '#64748b',
+                  fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', transition: 'all 0.15s',
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  {p === 'High' ? '🔴 High' : '🟡 Normal'}
+                </button>
+              ))}
+            </div>
+            <p style={{ color: '#475569', fontSize: '0.75rem', margin: '0.3rem 0 0' }}>
+              Mark as High only for immediate danger or severe disruption.
+            </p>
+          </div>
+
+          {/* Description */}
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Description</label>
+            <textarea value={form.description} onChange={e => set('description', e.target.value)}
+              placeholder="Describe the issue in detail — what, where, how severe..."
+              rows={4} style={{ ...inputStyle, resize: 'vertical', lineHeight: 1.6 }} />
+          </div>
+
+          {/* ── IMAGE UPLOAD (imgbb) ── */}
+          <div style={fieldWrap}>
+            <label style={labelStyle}>Photo of the Issue</label>
+
+            {/* Upload area — hidden when image selected */}
+            {!imagePreview && (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: '2px dashed rgba(99,102,241,0.35)',
+                  borderRadius: '14px',
+                  padding: '2rem 1rem',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  background: 'rgba(99,102,241,0.04)',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.6)'; e.currentTarget.style.background = 'rgba(99,102,241,0.08)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(99,102,241,0.35)'; e.currentTarget.style.background = 'rgba(99,102,241,0.04)'; }}
+              >
+                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🖼️</div>
+                <p style={{ color: '#818cf8', fontWeight: 600, fontSize: '0.9rem', margin: '0 0 0.25rem' }}>
+                  Click to upload a photo
+                </p>
+                <p style={{ color: '#475569', fontSize: '0.78rem', margin: 0 }}>
+                  JPG, PNG, WEBP, GIF — max 10MB
+                </p>
               </div>
-              <div>
-                <label style={labelStyle}>Priority Level</label>
-                <select {...register('priority')} style={selectStyle}>
-                  <option value="High">🔴 High</option>
-                  <option value="Medium">🟠 Medium</option>
-                  <option value="Low">🟢 Low</option>
-                </select>
+            )}
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
+            />
+
+            {/* Preview */}
+            {imagePreview && (
+              <div style={{ position: 'relative' }}>
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  style={{ width: '100%', maxHeight: 260, objectFit: 'cover', borderRadius: '12px', border: '1px solid rgba(99,102,241,0.3)', display: 'block' }}
+                />
+                {/* File name + size info */}
+                {imageFile && (
+                  <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.78rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '75%' }}>
+                      📎 {imageFile.name} ({(imageFile.size / 1024).toFixed(0)} KB)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      style={{ background: 'rgba(244,114,182,0.15)', border: '1px solid rgba(244,114,182,0.3)', borderRadius: 8, padding: '0.25rem 0.7rem', color: '#f472b6', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}
+                    >
+                      ✕ Remove
+                    </button>
+                  </div>
+                )}
+                {/* Change button */}
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{ marginTop: '0.4rem', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8, padding: '0.35rem 0.9rem', color: '#818cf8', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
+                >
+                  📷 Change Photo
+                </button>
               </div>
-            </div>
+            )}
 
-            {/* Location */}
-            <div>
-              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <MapPin size={13} color="#f472b6" /> Location
-              </label>
-              <input {...register('location', { required: 'Location is required' })} placeholder="e.g., Mirpur 10, Dhaka" style={inputStyle(errors.location)} />
-              {errors.location && <p style={errMsg}>{errors.location.message}</p>}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Mail size={13} color="#34d399" /> Your Email
-              </label>
-              <input type="email" defaultValue={user.email} disabled style={{ ...inputStyle(false), opacity: 0.5, cursor: 'not-allowed' }} />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label style={{ ...labelStyle, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <MessageSquare size={13} color="#22d3ee" /> Description
-              </label>
-              <textarea {...register('description')} rows="4" placeholder="Describe the issue in detail — what happened, how severe it is..." style={{ ...inputStyle(false), resize: 'vertical', minHeight: 110 }} />
-            </div>
-
-            {/* Image */}
-            <div>
-              <label style={labelStyle}>Upload Photo</label>
-              <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: `1px dashed ${errors.image ? 'rgba(236,72,153,0.5)' : 'rgba(255,255,255,0.15)'}`,
-                borderRadius: 12, padding: '1.2rem',
-                display: 'flex', alignItems: 'center', gap: '0.75rem',
-              }}>
-                <span style={{ fontSize: '1.5rem' }}>🖼️</span>
-                <div>
-                  <input type="file" {...register('image', { required: 'Image is required' })} style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', background: 'transparent', border: 'none', outline: 'none', cursor: 'pointer' }} />
-                  <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', margin: '0.3rem 0 0' }}>JPG, PNG, WEBP accepted</p>
-                </div>
+            {/* Upload progress indicator */}
+            {uploadProgress && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#22d3ee', fontSize: '0.82rem', marginTop: '0.35rem' }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(6,182,212,0.3)', borderTop: '2px solid #22d3ee', animation: 'spin 0.8s linear infinite' }} />
+                {uploadProgress}
+                <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
               </div>
-              {errors.image && <p style={errMsg}>{errors.image.message}</p>}
-            </div>
+            )}
+          </div>
 
-            {/* Submit */}
-            <button type="submit" style={{
-              width: '100%', padding: '1rem',
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-              border: 'none', borderRadius: 14,
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={isLoading}
+            style={{
+              background: isLoading ? 'rgba(99,102,241,0.4)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              border: 'none', borderRadius: '12px', padding: '0.9rem',
               color: '#fff', fontWeight: 700, fontSize: '1rem',
-              cursor: 'pointer', boxShadow: '0 0 30px rgba(99,102,241,0.45)',
-              transition: 'all 0.2s', fontFamily: "'DM Sans',sans-serif",
-            }}>
-              🚩 Submit Report
-            </button>
-          </form>
-        </div>
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+              boxShadow: isLoading ? 'none' : '0 0 25px rgba(99,102,241,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+              opacity: isLoading ? 0.7 : 1,
+            }}
+          >
+            {isLoading ? (
+              <>
+                <div style={{ width: 18, height: 18, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid #fff', animation: 'spin 0.8s linear infinite' }} />
+                {uploading ? 'Uploading image...' : 'Submitting...'}
+              </>
+            ) : (
+              '📝 Submit Issue Report'
+            )}
+          </button>
+        </form>
       </div>
     </div>
   );
 };
-
-const labelStyle = { display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem' };
-const inputStyle = (hasError) => ({
-  width: '100%', padding: '0.8rem 1rem',
-  background: 'rgba(255,255,255,0.05)',
-  border: `1px solid ${hasError ? 'rgba(236,72,153,0.5)' : 'rgba(255,255,255,0.1)'}`,
-  borderRadius: 10, color: '#fff', fontSize: '0.9rem',
-  outline: 'none', fontFamily: "'DM Sans',sans-serif", boxSizing: 'border-box',
-});
-const selectStyle = {
-  width: '100%', padding: '0.8rem 1rem',
-  background: 'rgba(13,17,30,0.8)',
-  border: '1px solid rgba(255,255,255,0.1)',
-  borderRadius: 10, color: '#fff', fontSize: '0.9rem',
-  outline: 'none', fontFamily: "'DM Sans',sans-serif", cursor: 'pointer',
-};
-const errMsg = { color: '#f472b6', fontSize: '0.78rem', marginTop: '0.35rem' };
 
 export default ReportIssue;

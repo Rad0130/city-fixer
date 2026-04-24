@@ -1,19 +1,18 @@
-// src/pages/Issues/IssueDetails.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import useAxios from '../../Hooks/useAxios';
 import useAxiosSecure from '../../Hooks/useAxiosSecure';
 import useAuth from '../../Hooks/useAuth';
 import useRole from '../../Hooks/useRole';
+import Comments from '../../components/Comments/Comments';
+import StaffRating from '../../components/Ratings/StaffRating';
 import {
   Calendar, Tag, AlertCircle, Clock, User,
   ArrowLeft, Trash2, Edit3, Zap, MapPin, ThumbsUp,
-  Image as ImageIcon, CheckCircle, XCircle, Loader,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
-// ── Status & Priority config ───────────────────────────────────────────────────
 const statusCfg = {
   'Pending':     { color: '#fbbf24', bg: 'rgba(251,191,36,0.12)',  border: 'rgba(251,191,36,0.3)',  icon: '⏳' },
   'In Progress': { color: '#22d3ee', bg: 'rgba(6,182,212,0.12)',   border: 'rgba(6,182,212,0.3)',   icon: '⚙️' },
@@ -24,8 +23,7 @@ const statusCfg = {
 
 const priorityCfg = {
   'High':   { color: '#f472b6', bg: 'rgba(244,114,182,0.12)', border: 'rgba(244,114,182,0.3)' },
-  'Medium': { color: '#fb923c', bg: 'rgba(251,146,60,0.12)',  border: 'rgba(251,146,60,0.3)' },
-  'Low':    { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)',  border: 'rgba(148,163,184,0.2)' },
+  'Normal': { color: '#94a3b8', bg: 'rgba(148,163,184,0.1)',  border: 'rgba(148,163,184,0.2)' },
 };
 
 const timelineRoleColor = {
@@ -34,39 +32,25 @@ const timelineRoleColor = {
   citizen: '#818cf8',
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
 const IssueDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const axiosPublic = useAxios();
   const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
-  const { isAdmin, isStaff, isCitizen } = useRole();
+  const { isAdmin, isStaff, isCitizen, refetch: refetchRole } = useRole();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const [ratingRefresh, setRatingRefresh] = useState(0);
 
-  // ── Fetch issue ──
-  const { data: issues, isLoading, error, refetch } = useQuery({
+  const { data: issue, isLoading, error, refetch } = useQuery({
     queryKey: ['issue', id],
     queryFn: async () => {
-      const res = await axiosPublic.get(`/issues?_id=${id}`);
+      const res = await axiosPublic.get(`/issues/${id}`);
       return res.data;
     },
   });
-  const issue = issues?.[0] || null;
 
-  // ── Fetch assigned staff info ──
-  const { data: staffInfo } = useQuery({
-    queryKey: ['staffInfo', issue?.assignedTo],
-    enabled: !!issue?.assignedTo,
-    queryFn: async () => {
-      const res = await axiosSecure.get(`/users/role/${issue.assignedTo}`);
-      return res.data;
-    },
-  });
-  console.log(staffInfo);
-
-  // ── Delete mutation ──
   const deleteMutation = useMutation({
     mutationFn: () => axiosSecure.delete(`/issues/${id}`),
     onSuccess: () => {
@@ -75,7 +59,6 @@ const IssueDetails = () => {
     },
   });
 
-  // ── Boost payment ──
   const handlePayment = async () => {
     const result = await Swal.fire({
       title: 'Boost this issue for 100৳?',
@@ -94,33 +77,54 @@ const IssueDetails = () => {
         issueID: issue._id,
         email: issue.reportedBy,
         amount: 100,
+        type: 'boost',
       });
       window.location.href = res.data.url;
     }
   };
 
-  // ── Handle post-payment redirect ──
   useEffect(() => {
     if (!issue) return;
     const paymentStatus = searchParams.get('payment');
     const sessionId = searchParams.get('sessionID');
 
     const handlePostPayment = async () => {
-      if (paymentStatus === 'success') {
-        Swal.fire({ title: 'Boosted!', text: 'Priority set to High.', icon: 'success', background: '#0d1117', color: '#fff' });
-        await axiosSecure.patch(`/issues/${issue._id}`, { priority: 'High' });
-        await axiosSecure.post('/payments', {
-          transactionId: sessionId,
-          issueId: issue._id,
-          IssueName: issue.title,
-          amount: 100,
-          currency: 'BDT',
-          paidBy: user.displayName,
-          paidByEmail: user.email,
-        });
+      if (paymentStatus === 'success' && sessionId) {
+        const isPremiumPayment = window.location.pathname.includes('/dashboard/profile');
+        
+        if (isPremiumPayment) {
+          try {
+            await axiosSecure.post('/users/upgrade-premium', { sessionId });
+            await refetchRole();
+            Swal.fire({
+              title: '⭐ Premium Activated!',
+              text: 'You now have unlimited reports and priority support.',
+              icon: 'success',
+              background: '#0d1117',
+              color: '#fff',
+              confirmButtonColor: '#6366f1',
+            });
+            window.location.reload();
+          } catch (err) {
+            Swal.fire({ title: 'Error', text: err?.response?.data?.message || 'Could not verify payment', icon: 'error', background: '#0d1117', color: '#fff' });
+          }
+        } else {
+          Swal.fire({ title: '🚀 Boosted!', text: 'Priority set to High.', icon: 'success', background: '#0d1117', color: '#fff' });
+          await axiosSecure.patch(`/issues/${issue._id}`, { priority: 'High' });
+          await axiosSecure.post('/payments', {
+            transactionId: sessionId,
+            issueId: issue._id,
+            IssueName: issue.title,
+            amount: 100,
+            currency: 'BDT',
+            paidBy: user?.displayName,
+            paidByEmail: user?.email,
+            type: 'boost',
+          });
+          refetch();
+          queryClient.invalidateQueries(['issue', id]);
+        }
         setSearchParams({}, { replace: true });
-        refetch();
-        queryClient.invalidateQueries(['issue', id]);
       }
       if (paymentStatus === 'cancel') {
         Swal.fire({ title: 'Cancelled', icon: 'info', background: '#0d1117', color: '#fff' });
@@ -128,25 +132,25 @@ const IssueDetails = () => {
       }
     };
     handlePostPayment();
-  }, [searchParams, issue, refetch, queryClient, id, axiosSecure, user, setSearchParams]);
+  }, [searchParams, issue]);
 
-  // ── Loading / Error states ──
   if (isLoading) return <LoadingScreen text="Loading issue details..." />;
   if (error || !issue) return (
     <div style={centerFlex}>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>🔍</div>
         <h2 style={{ color: '#fff', fontFamily: "'Syne',sans-serif", fontWeight: 800, marginBottom: '1rem' }}>Issue Not Found</h2>
-        <button onClick={() => navigate('/allissues')} style={primaryBtn}>Back to All Issues</button>
+        <button onClick={() => navigate('/allissues')} style={primaryBtnStyle}>Back to All Issues</button>
       </div>
     </div>
   );
 
   const sc = statusCfg[issue.status] || statusCfg['Pending'];
-  const pc = priorityCfg[issue.priority] || priorityCfg['Low'];
+  const pc = priorityCfg[issue.priority] || priorityCfg['Normal'];
   const isOwner = user?.email === issue.reportedBy;
   const isHigh = issue.priority === 'High';
   const isPending = issue.status === 'Pending';
+  const isResolved = issue.status === 'Resolved';
   const timeline = issue.timeline || [];
 
   return (
@@ -156,7 +160,6 @@ const IssueDetails = () => {
       fontFamily: "'DM Sans', sans-serif",
       paddingTop: '5rem', paddingBottom: '4rem',
     }}>
-      {/* BG orbs */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: 0, right: 0, width: '40vw', height: '40vw', maxWidth: 600, background: 'radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
         <div style={{ position: 'absolute', bottom: 0, left: 0, width: '30vw', height: '30vw', maxWidth: 400, background: 'radial-gradient(circle, rgba(236,72,153,0.08) 0%, transparent 70%)', borderRadius: '50%' }} />
@@ -165,49 +168,43 @@ const IssueDetails = () => {
 
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '2rem clamp(1rem,4vw,2rem)', position: 'relative', zIndex: 1 }}>
 
-        {/* ── TOP ACTION BAR ── */}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
           <button onClick={() => navigate(-1)} style={ghostBtn}>
             <ArrowLeft size={16} /> Back
           </button>
-
           <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-            {/* Owner: Edit (only if pending) */}
             {isOwner && isPending && (
               <Link to={`/editissue/${id}`} style={outlineBtn('#818cf8')}>
                 <Edit3 size={15} /> Edit
               </Link>
             )}
-            {/* Owner or Admin: Delete */}
             {(isOwner || isAdmin) && (
               <div className='flex gap-2'>
                 <button onClick={() => {
-                Swal.fire({
-                  title: 'Delete this issue?', text: "This action cannot be undone.",
-                  icon: 'warning', showCancelButton: true,
-                  confirmButtonColor: '#ec4899', cancelButtonColor: '#374151',
-                  confirmButtonText: 'Yes, delete', background: '#0d1117', color: '#fff',
-                }).then(r => { if (r.isConfirmed) deleteMutation.mutate(); });
-              }} style={outlineBtn('#f472b6')}>
-                <Trash2 size={15} /> Delete
-              </button>
-              <Link to={`/editissue/${id}`} style={outlineBtn('#818cf8')}>
-                <Edit3 size={15} /> Edit
-              </Link>
+                  Swal.fire({
+                    title: 'Delete this issue?', text: 'This action cannot be undone.',
+                    icon: 'warning', showCancelButton: true,
+                    confirmButtonColor: '#ec4899', cancelButtonColor: '#374151',
+                    confirmButtonText: 'Yes, delete', background: '#0d1117', color: '#fff',
+                  }).then(r => { if (r.isConfirmed) deleteMutation.mutate(); });
+                }} style={outlineBtn('#f472b6')}>
+                  <Trash2 size={15} /> Delete
+                </button>
+                {isAdmin && (
+                  <Link to={`/editissue/${id}`} style={outlineBtn('#818cf8')}>
+                    <Edit3 size={15} /> Edit
+                  </Link>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* ── MAIN GRID ── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-          {/* ── LEFT: Main content (2/3) ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }} className="lg:col-span-2">
 
-            {/* Header card */}
             <div style={glassCard}>
-              {/* Badges row */}
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '1.5rem' }}>
                 <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                   <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: 999, padding: '0.3rem 0.9rem', color: sc.color, fontSize: '0.8rem', fontWeight: 700 }}>
@@ -218,7 +215,7 @@ const IssueDetails = () => {
                   </span>
                   {issue.trackingId && (
                     <span style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 999, padding: '0.3rem 0.9rem', color: 'rgba(255,255,255,0.4)', fontSize: '0.78rem', fontWeight: 600 }}>
-                      🆔 {issue.trackingId}
+                      🔖 {issue.trackingId}
                     </span>
                   )}
                 </div>
@@ -238,7 +235,6 @@ const IssueDetails = () => {
                 <span style={{ fontSize: '0.95rem' }}>{issue.location}</span>
               </div>
 
-              {/* Image */}
               {issue.image && (
                 <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.07)', marginBottom: '0.5rem' }}>
                   <img src={issue.image} alt={issue.title} style={{ width: '100%', maxHeight: 460, objectFit: 'cover', display: 'block' }}
@@ -247,7 +243,6 @@ const IssueDetails = () => {
               )}
             </div>
 
-            {/* Description */}
             <div style={glassCard}>
               <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#fff', fontSize: '1.05rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ color: '#818cf8' }}>📝</span> Description
@@ -259,7 +254,11 @@ const IssueDetails = () => {
               </div>
             </div>
 
-            {/* ── TIMELINE SECTION ── */}
+            {/* Comments Section */}
+            <div style={glassCard}>
+              <Comments issueId={id} />
+            </div>
+
             <div style={glassCard}>
               <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#fff', fontSize: '1.05rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span style={{ color: '#22d3ee' }}>📋</span> Issue Timeline
@@ -277,36 +276,31 @@ const IssueDetails = () => {
                 </div>
               ) : (
                 <div style={{ position: 'relative', paddingLeft: '2rem' }}>
-                  {/* Vertical line */}
                   <div style={{
                     position: 'absolute', left: 9, top: 8, bottom: 8, width: 2,
                     background: 'linear-gradient(to bottom, rgba(99,102,241,0.6), rgba(6,182,212,0.3), rgba(255,255,255,0.05))',
                     borderRadius: 99,
                   }} />
-
-                  {/* Entries: latest first */}
                   {[...timeline].reverse().map((entry, i) => {
                     const sc2 = statusCfg[entry.status] || statusCfg['Pending'];
                     const roleColor = timelineRoleColor[entry.role] || '#818cf8';
                     return (
                       <div key={i} style={{ position: 'relative', marginBottom: i < timeline.length - 1 ? '1.4rem' : 0 }}>
-                        {/* Dot */}
                         <div style={{
                           position: 'absolute', left: -27, top: 4,
                           width: 18, height: 18, borderRadius: '50%',
                           background: sc2.color,
                           border: '3px solid rgba(10,10,26,0.9)',
                           boxShadow: `0 0 12px ${sc2.color}80`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: '0.55rem',
                         }} />
-
-                        <div style={{
-                          background: 'rgba(255,255,255,0.03)',
-                          border: '1px solid rgba(255,255,255,0.07)',
-                          borderRadius: 14, padding: '1rem 1.2rem',
-                        }}>
-                          {/* Top row */}
+                        <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: '1rem 1.2rem' }}>
+                          {entry.trackingId && (
+                            <div style={{ marginBottom: '0.4rem' }}>
+                              <span style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 6, padding: '0.12rem 0.5rem', color: '#818cf8', fontSize: '0.68rem', fontFamily: 'monospace', fontWeight: 700 }}>
+                                {entry.trackingId}
+                              </span>
+                            </div>
+                          )}
                           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
                             <span style={{ background: sc2.bg, border: `1px solid ${sc2.border}`, borderRadius: 999, padding: '0.15rem 0.6rem', color: sc2.color, fontSize: '0.72rem', fontWeight: 700 }}>
                               {sc2.icon} {entry.status}
@@ -315,18 +309,14 @@ const IssueDetails = () => {
                               {entry.role}
                             </span>
                           </div>
-
-                          {/* Message */}
                           <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: '0.875rem', margin: '0.3rem 0', lineHeight: 1.5 }}>
                             {entry.message}
                           </p>
-
-                          {/* Footer */}
                           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.4rem' }}>
-                            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                              👤 {entry.updatedBy}
+                            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
+                              👤 {entry.updaterName || entry.updatedBy}
                             </span>
-                            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.75rem' }}>
                               🕐 {entry.timestamp ? new Date(entry.timestamp).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                             </span>
                           </div>
@@ -339,10 +329,8 @@ const IssueDetails = () => {
             </div>
           </div>
 
-          {/* ── RIGHT: Sidebar (1/3) ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
 
-            {/* Issue Details */}
             <div style={glassCard}>
               <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#fff', fontSize: '1rem', marginBottom: '1.2rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
                 Issue Details
@@ -350,7 +338,7 @@ const IssueDetails = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {[
                   { icon: <Tag size={16} />, label: 'Category', value: issue.category, accent: '#818cf8' },
-                  { icon: <User size={16} />, label: 'Reported By', value: issue.reportedBy || 'Anonymous', accent: '#34d399' },
+                  { icon: <User size={16} />, label: 'Reported By', value: issue.reporterName || issue.reportedBy || 'Anonymous', accent: '#34d399' },
                   { icon: <Calendar size={16} />, label: 'Reported Date', value: issue.createdAt ? new Date(issue.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A', accent: '#f472b6' },
                   { icon: <Clock size={16} />, label: 'Last Updated', value: issue.updatedAt ? new Date(issue.updatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'N/A', accent: '#22d3ee' },
                 ].map(item => (
@@ -366,7 +354,6 @@ const IssueDetails = () => {
                 ))}
               </div>
 
-              {/* Boost button — only for citizens who own this issue and not already high */}
               {isCitizen && isOwner && (
                 <div style={{ marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
                   <button
@@ -391,9 +378,29 @@ const IssueDetails = () => {
                   </p>
                 </div>
               )}
+
+              {user && isCitizen && !isOwner && (
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                  <UpvoteButton issue={issue} issueId={id} axiosSecure={axiosSecure} user={user} onSuccess={() => { refetch(); queryClient.invalidateQueries(['issue', id]); }} />
+                </div>
+              )}
             </div>
 
-            {/* ── Assigned Staff Card ── */}
+            {/* Staff Rating Section - Show when issue is resolved and citizen is owner */}
+            {issue.assignedTo && isResolved && isOwner && isCitizen && (
+              <div style={glassCard}>
+                <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#f59e0b', fontSize: '0.95rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  ⭐ Rate Staff
+                </h3>
+                <StaffRating 
+                  staffEmail={issue.assignedTo} 
+                  issueId={id} 
+                  issueTitle={issue.title}
+                  onRated={() => setRatingRefresh(prev => prev + 1)}
+                />
+              </div>
+            )}
+
             {issue.assignedTo && (
               <div style={{ ...glassCard, borderColor: 'rgba(52,211,153,0.2)', background: 'rgba(52,211,153,0.04)' }}>
                 <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#34d399', fontSize: '0.95rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -411,7 +418,6 @@ const IssueDetails = () => {
               </div>
             )}
 
-            {/* ── Admin: Status changer ── */}
             {isAdmin && (
               <div style={glassCard}>
                 <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#f472b6', fontSize: '0.95rem', marginBottom: '1rem' }}>
@@ -452,7 +458,6 @@ const IssueDetails = () => {
               </div>
             )}
 
-            {/* ── Staff: Status changer ── */}
             {isStaff && issue.assignedTo === user?.email && (
               <div style={glassCard}>
                 <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#34d399', fontSize: '0.95rem', marginBottom: '1rem' }}>
@@ -479,7 +484,7 @@ const IssueDetails = () => {
                       }}
                       style={{
                         padding: '0.6rem 0.9rem', borderRadius: 9,
-                        background: `${statusCfg[s]?.bg || 'rgba(52,211,153,0.1)'}`,
+                        background: statusCfg[s]?.bg || 'rgba(52,211,153,0.1)',
                         border: `1px solid ${statusCfg[s]?.border || 'rgba(52,211,153,0.3)'}`,
                         color: statusCfg[s]?.color || '#34d399',
                         fontSize: '0.85rem', fontWeight: 700,
@@ -491,13 +496,12 @@ const IssueDetails = () => {
                     </button>
                   ))}
                   {staffStatusFlow(issue.status).length === 0 && (
-                    <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>No further status updates available.</p>
+                    <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.85rem' }}>No further updates available.</p>
                   )}
                 </div>
               </div>
             )}
 
-            {/* Alert card */}
             <div style={{ ...glassCard, borderColor: 'rgba(6,182,212,0.2)', background: 'rgba(6,182,212,0.04)' }}>
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
                 <AlertCircle size={20} color="#22d3ee" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -513,7 +517,6 @@ const IssueDetails = () => {
               </div>
             </div>
 
-            {/* Community actions */}
             <div style={glassCard}>
               <h4 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, color: '#fff', fontSize: '0.95rem', marginBottom: '0.9rem' }}>Community Actions</h4>
               <div style={{ display: 'flex', gap: '0.6rem' }}>
@@ -532,7 +535,50 @@ const IssueDetails = () => {
   );
 };
 
-// ── Staff status flow: what status can staff set based on current ──────────────
+const UpvoteButton = ({ issue, issueId, axiosSecure, user, onSuccess }) => {
+  const [localVotes, setLocalVotes] = React.useState(issue.upvotes || 0);
+  const [hasVoted, setHasVoted] = React.useState(
+    Array.isArray(issue.upvotedBy) && issue.upvotedBy.includes(user?.email)
+  );
+  const [voting, setVoting] = React.useState(false);
+
+  const handleUpvote = async () => {
+    if (voting || hasVoted) return;
+    setVoting(true);
+    try {
+      await axiosSecure.patch(`/issues/${issueId}/upvote`);
+      setLocalVotes(v => v + 1);
+      setHasVoted(true);
+      onSuccess?.();
+      Swal.fire({ title: 'Upvoted! 👍', timer: 1200, showConfirmButton: false, background: '#0d1117', color: '#fff' });
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Failed to upvote';
+      Swal.fire({ title: msg, icon: 'warning', timer: 2000, showConfirmButton: false, background: '#0d1117', color: '#fff' });
+    } finally {
+      setVoting(false);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleUpvote}
+      disabled={hasVoted || voting}
+      style={{
+        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+        padding: '0.75rem', borderRadius: 12, fontWeight: 700, fontSize: '0.9rem',
+        cursor: hasVoted ? 'not-allowed' : 'pointer',
+        background: hasVoted ? 'rgba(129,140,248,0.1)' : 'linear-gradient(135deg, rgba(99,102,241,0.2), rgba(139,92,246,0.2))',
+        border: `1px solid ${hasVoted ? 'rgba(129,140,248,0.3)' : 'rgba(99,102,241,0.4)'}`,
+        color: hasVoted ? '#818cf8' : '#a5b4fc',
+        fontFamily: "'DM Sans',sans-serif",
+      }}
+    >
+      <ThumbsUp size={16} fill={hasVoted ? 'currentColor' : 'none'} />
+      {hasVoted ? `Upvoted (${localVotes})` : `Upvote (${localVotes})`}
+    </button>
+  );
+};
+
 const staffStatusFlow = (currentStatus) => {
   const flows = {
     'Pending':     ['In Progress'],
@@ -544,7 +590,6 @@ const staffStatusFlow = (currentStatus) => {
   return flows[currentStatus] || [];
 };
 
-// ── Shared styles ──────────────────────────────────────────────────────────────
 const glassCard = {
   background: 'rgba(255,255,255,0.03)',
   border: '1px solid rgba(255,255,255,0.08)',
@@ -568,7 +613,7 @@ const outlineBtn = (color) => ({
   textDecoration: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
 });
 
-const primaryBtn = {
+const primaryBtnStyle = {
   background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
   border: 'none', borderRadius: 12, padding: '0.75rem 1.8rem',
   color: '#fff', fontWeight: 700, fontSize: '0.9rem',
