@@ -1,14 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+// /home/shafiur/City-Fixer/src/pages/Dashboard/Admin/AdminProfile.jsx
+import { useState, useRef } from 'react';
 import useAuth from '../../../Hooks/useAuth';
-import useAxios from '../../../Hooks/useAxios';
 import { glassCard, inputStyle, labelStyle, primaryBtn } from './components/styles';
-import { RatingDisplay } from '../../../components/Ratings/StaffRating';
-import useAxiosSecure from '../../../Hooks/useAxiosSecure';
 
-const StaffProfile = () => {
+const AdminProfile = () => {
   const { user, updateUserProfile } = useAuth();
-  const axiosPublic = useAxios();
   const [name, setName] = useState(user?.displayName || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -16,29 +12,6 @@ const StaffProfile = () => {
   const [imagePreview, setImagePreview] = useState(user?.photoURL || '');
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
-  
-  const [isEmailVerified, setIsEmailVerified] = useState(user?.emailVerified || false);
-
-  useEffect(() => {
-    const refreshUserData = async () => {
-      try {
-        const { data } = await useAxiosSecure.get('/users/me');
-        setIsEmailVerified(data.isEmailVerified || false);
-      } catch (err) {
-        console.error('Failed to refresh user data:', err);
-      }
-    };
-    refreshUserData();
-  }, []);
-
-  const { data: ratingsData } = useQuery({
-    queryKey: ['my-ratings', user?.email],
-    enabled: !!user?.email,
-    queryFn: async () => {
-      const res = await axiosPublic.get(`/ratings/${user.email}`);
-      return res.data;
-    },
-  });
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -83,17 +56,15 @@ const StaffProfile = () => {
   };
 
   const currentPhoto = imagePreview || user?.photoURL || '';
-  const avgRating = ratingsData?.avgRating || 0;
-  const ratingCount = ratingsData?.count || 0;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: 560 }}>
       <div>
-        <h1 style={{ color: '#f1f5f9', fontSize: '1.75rem', fontWeight: 700, margin: 0 }}>My Profile</h1>
-        <p style={{ color: '#64748b', marginTop: '0.25rem', fontSize: '0.9rem' }}>Manage your staff account</p>
+        <h1 style={{ color: '#f1f5f9', fontSize: '1.75rem', fontWeight: 700, margin: 0 }}>Admin Profile</h1>
+        <p style={{ color: '#64748b', marginTop: '0.25rem', fontSize: '0.9rem' }}>Manage your account details</p>
       </div>
 
-      {/* Avatar Card */}
+      {/* Avatar + Info */}
       <div style={{ ...glassCard, display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <div style={{
@@ -112,55 +83,22 @@ const StaffProfile = () => {
             style={{
               position: 'absolute', bottom: -2, right: -2,
               width: 26, height: 26, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #34d399, #22d3ee)',
+              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
               border: '2px solid #0a0a1a', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem',
             }}
+            title="Change photo"
           >📷</button>
           <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
         </div>
         <div>
-          <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '1.1rem' }}>{user?.displayName || 'Staff Member'}</div>
+          <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '1.1rem' }}>{user?.displayName || 'Admin'}</div>
           <div style={{ color: '#64748b', fontSize: '0.85rem' }}>{user?.email}</div>
-          <span style={{ display: 'inline-block', marginTop: '0.4rem', background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399', borderRadius: '6px', padding: '0.2rem 0.7rem', fontSize: '0.7rem', fontWeight: 700 }}>
-            🛠️ STAFF
+          {imageFile && <div style={{ color: '#818cf8', fontSize: '0.72rem', marginTop: '0.25rem' }}>📎 {imageFile.name} — save to apply</div>}
+          <span style={{ display: 'inline-block', marginTop: '0.4rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', borderRadius: '6px', padding: '0.2rem 0.7rem', fontSize: '0.7rem', fontWeight: 700 }}>
+            🔑 ADMIN
           </span>
         </div>
-      </div>
-
-      {/* My Ratings */}
-      <div style={{ ...glassCard, background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.15)' }}>
-        <h3 style={{ color: '#f59e0b', margin: '0 0 1rem', fontWeight: 700 }}>⭐ My Rating</h3>
-        {ratingCount === 0 ? (
-          <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.875rem' }}>
-            No ratings yet. Complete assigned issues to receive ratings from citizens.
-          </div>
-        ) : (
-          <>
-            <div style={{ marginBottom: '1rem' }}>
-              <RatingDisplay avgRating={avgRating} count={ratingCount} size={22} />
-            </div>
-            {/* Recent ratings */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', maxHeight: 240, overflowY: 'auto' }}>
-              {(ratingsData?.ratings || []).slice(0, 5).map((r, i) => (
-                <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '0.75rem 1rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.3rem' }}>
-                    <div style={{ color: '#e2e8f0', fontSize: '0.82rem', fontWeight: 600 }}>{r.ratedByName || r.ratedBy}</div>
-                    <RatingDisplay avgRating={r.rating} count={0} size={13} />
-                  </div>
-                  <div style={{ color: '#64748b', fontSize: '0.72rem', marginBottom: r.feedback ? '0.3rem' : 0 }}>
-                    Re: {r.issueTitle || 'Issue'}
-                  </div>
-                  {r.feedback && (
-                    <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem', margin: 0, lineHeight: 1.5, fontStyle: 'italic' }}>
-                      "{r.feedback}"
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </>
-        )}
       </div>
 
       {/* Edit Form */}
@@ -175,16 +113,16 @@ const StaffProfile = () => {
           onClick={() => fileInputRef.current?.click()}
           style={{
             display: 'flex', alignItems: 'center', gap: '0.85rem',
-            background: 'rgba(52,211,153,0.06)', border: '1px dashed rgba(52,211,153,0.35)',
+            background: 'rgba(99,102,241,0.06)', border: '1px dashed rgba(99,102,241,0.35)',
             borderRadius: '12px', padding: '0.85rem 1rem',
             cursor: 'pointer', marginBottom: '1rem',
           }}
         >
           {currentPhoto
             ? <img src={currentPhoto} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-            : <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(52,211,153,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>📷</div>}
+            : <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem' }}>📷</div>}
           <div>
-            <div style={{ color: '#34d399', fontWeight: 600, fontSize: '0.85rem' }}>{imageFile ? imageFile.name : 'Click to upload photo'}</div>
+            <div style={{ color: '#818cf8', fontWeight: 600, fontSize: '0.85rem' }}>{imageFile ? imageFile.name : 'Click to upload photo'}</div>
             <div style={{ color: '#475569', fontSize: '0.72rem' }}>{imageFile ? `${(imageFile.size / 1024).toFixed(0)} KB` : 'JPG, PNG, WEBP — max 10MB'}</div>
           </div>
         </div>
@@ -200,27 +138,21 @@ const StaffProfile = () => {
         </div>
       </div>
 
-      {/* Account Info */}
+      {/* Security Info */}
       <div style={glassCard}>
-        <h3 style={{ color: '#e2e8f0', margin: '0 0 1rem', fontWeight: 700 }}>Account Info</h3>
+        <h3 style={{ color: '#e2e8f0', margin: '0 0 1rem', fontWeight: 700 }}>Account Security</h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
           {[
-            { 
-              label: 'Email Verified', 
-              desc: 'Account verification status', 
-              value: isEmailVerified ? '✅ Verified' : '⚠️ Not Verified', 
-              color: isEmailVerified ? '#34d399' : '#f87171' 
-            },
-            { label: 'Account Role', desc: 'Your permission level', value: 'STAFF', valueColor: '#34d399' },
+            { label: 'Email Verified', desc: 'Your email address is verified', value: user?.emailVerified ? '✅' : '⚠️' },
+            { label: 'Role', desc: 'Full administrative access', value: 'ADMIN', color: '#818cf8' },
             { label: 'Last Sign In', desc: user?.metadata?.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'N/A' },
-            { label: 'Account Created', desc: user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'N/A' },
           ].map(item => (
             <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
               <div>
                 <div style={{ color: '#e2e8f0', fontSize: '0.9rem', fontWeight: 600 }}>{item.label}</div>
                 <div style={{ color: '#64748b', fontSize: '0.78rem' }}>{item.desc}</div>
               </div>
-              {item.value && <span style={{ color: item.valueColor || '#94a3b8', fontWeight: 700, fontSize: '0.85rem' }}>{item.value}</span>}
+              {item.value && <span style={{ color: item.color || '#94a3b8', fontWeight: 700 }}>{item.value}</span>}
             </div>
           ))}
         </div>
@@ -229,4 +161,4 @@ const StaffProfile = () => {
   );
 };
 
-export default StaffProfile;
+export default AdminProfile;

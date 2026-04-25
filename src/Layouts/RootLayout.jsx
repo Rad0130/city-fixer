@@ -1,18 +1,22 @@
 import React from 'react';
-import Navbar from '../components/Navbar';
 import { Outlet } from 'react-router';
+import NavBar from '../components/Navbar';
 import Footer from '../components/Footer';
+import Chatbot from '../components/Chatbot/Chatbot';
+import useAuth from '../Hooks/useAuth';
 
 const RootLayout = () => {
-    return (
-        <div>
-            <Navbar></Navbar>
-            <div className='max-w-[1600px] mx-auto'>
-                <Outlet></Outlet>
-            </div>
-            <Footer></Footer>
-        </div>
-    );
+  const { user } = useAuth();
+
+  return (
+    <>
+      <NavBar />
+      <Outlet />
+      <Footer />
+      {/* Only show chatbot for authenticated users */}
+      {user && <Chatbot />}
+    </>
+  );
 };
 
 export default RootLayout;
