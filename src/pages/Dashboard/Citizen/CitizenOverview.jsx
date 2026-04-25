@@ -98,6 +98,13 @@ const CitizenOverview = () => {
             <div style={{ color: '#94a3b8', fontSize: '0.78rem', marginTop: '0.4rem', fontWeight: 500 }}>{c.label}</div>
           </div>
         ))}
+        {isPremium && (
+          <div style={{ ...glassCard, textAlign: 'center', background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.2)' }}>
+            <div style={{ fontSize: '1.5rem', marginBottom: '0.4rem' }}>🚀</div>
+            <div style={{ color: '#fb923c', fontSize: '1rem', fontWeight: 800, lineHeight: 1 }}>Premium Priority</div>
+            <div style={{ color: '#94a3b8', fontSize: '0.7rem', marginTop: '0.4rem' }}>Your issues get faster attention</div>
+          </div>
+        )}
       </div>
 
       {/* Quick Links */}

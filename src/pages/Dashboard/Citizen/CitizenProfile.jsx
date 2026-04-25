@@ -1,4 +1,3 @@
-// /home/shafiur/City-Fixer/src/pages/Dashboard/Citizen/CitizenProfile.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router';
 import useAuth from '../../../Hooks/useAuth';
@@ -31,7 +30,7 @@ const PLANS = [
 const CitizenProfile = () => {
   const { user, updateUserProfile } = useAuth();
   const axiosSecure = useAxiosSecure();
-  const { isPremium, refetch: refetchRole } = useRole();
+  const { isPremium } = useRole();
   const location = useLocation();
   const fileInputRef = useRef(null);
 
@@ -474,10 +473,17 @@ const CitizenProfile = () => {
       )}
 
       {isPremium && (
-        <div style={{ ...glassCard, background: 'linear-gradient(135deg, rgba(251,146,60,0.08), rgba(251,191,36,0.04))', border: '1px solid rgba(251,146,60,0.25)', textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⭐</div>
-          <div style={{ color: '#fb923c', fontWeight: 700, fontSize: '1.1rem' }}>You are a Premium Member!</div>
-          <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '0.3rem' }}>Enjoy unlimited reports and priority support.</div>
+        <div style={{ ...glassCard, background: 'linear-gradient(135deg, rgba(251,146,60,0.1), rgba(251,191,36,0.05))', border: '1px solid rgba(251,146,60,0.25)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ fontSize: '2rem' }}>⭐</div>
+            <div style={{ flex: 1 }}>
+              <h3 style={{ color: '#fb923c', margin: '0 0 0.25rem', fontWeight: 700 }}>Premium Benefits Active!</h3>
+              <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: 0 }}>
+                Your issues are automatically boosted to <strong style={{ color: '#fb923c' }}>High Priority</strong> and go directly to <strong style={{ color: '#fb923c' }}>In Progress</strong> status.
+                No need to pay for boosts - enjoy priority handling! 🚀
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

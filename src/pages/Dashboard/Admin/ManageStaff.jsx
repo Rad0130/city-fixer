@@ -1,11 +1,12 @@
-// /home/shafiur/City-Fixer/src/pages/Dashboard/Admin/ManageStaff.jsx
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import useAxiosSecure from '../../../Hooks/useAxiosSecure';
 import Loading from './components/Loading';
 import { glassCard, inputStyle, selectStyle, primaryBtn, dangerBtn, labelStyle } from './components/styles';
 import { RatingDisplay } from '../../../components/Ratings/StaffRating';
+import UserProfileModal from '../../../components/UserProfileModal/UserProfileModal';
 import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 const ManageStaff = () => {
   const axiosSecure = useAxiosSecure();
@@ -14,6 +15,7 @@ const ManageStaff = () => {
   const [selectedIssue, setSelectedIssue] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [filterSearch, setFilterSearch] = useState('');
+  const [selectedStaffUser, setSelectedStaffUser] = useState(null);
 
   const { data: staff = [], isLoading } = useQuery({
     queryKey: ['staff-list'],
@@ -54,13 +56,61 @@ const ManageStaff = () => {
   };
 
   const handleRemoveStaff = async (email, name) => {
-    if (!window.confirm(`Remove ${name || email} from staff? They will become a citizen.`)) return;
+    // Show confirmation dialog
+    const result = await Swal.fire({
+      title: 'Remove Staff Member',
+      html: `Are you sure you want to remove <strong>${name || email}</strong> from staff?<br/><br/>They will become a regular citizen and will no longer have staff privileges.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#f87171',
+      cancelButtonColor: '#374151',
+      confirmButtonText: 'Yes, Remove',
+      cancelButtonText: 'Cancel',
+      background: '#0d1117',
+      color: '#fff',
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Show loading toast
+    toast.loading('Removing staff member...', { id: 'remove-staff-loading' });
+
     try {
       await axiosSecure.patch('/users/role', { email, role: 'citizen' });
+      
+      // Dismiss loading toast
+      toast.dismiss('remove-staff-loading');
+      
+      // Show success message
+      Swal.fire({
+        title: 'Staff Member Removed',
+        text: `${name || email} has been removed from staff and is now a citizen.`,
+        icon: 'success',
+        background: '#0d1117',
+        color: '#fff',
+        confirmButtonColor: '#6366f1',
+        timer: 2000,
+        timerProgressBar: true,
+      });
+      
       toast.success(`${name || email} removed from staff`);
       queryClient.invalidateQueries(['staff-list']);
     } catch (err) {
+      // Dismiss loading toast
+      toast.dismiss('remove-staff-loading');
+      
       console.log(err);
+      
+      // Show error message
+      Swal.fire({
+        title: 'Error',
+        text: err?.response?.data?.message || 'Failed to remove staff member',
+        icon: 'error',
+        background: '#0d1117',
+        color: '#fff',
+        confirmButtonColor: '#6366f1',
+      });
+      
       toast.error('Failed to remove staff');
     }
   };
@@ -93,7 +143,7 @@ const ManageStaff = () => {
           No staff found. Promote a citizen to staff from Staff Requests.
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
           {filtered.map(s => (
             <div key={s.email} style={{ ...glassCard, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -141,12 +191,27 @@ const ManageStaff = () => {
                 ))}
               </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => { setAssignModal(s); setSelectedIssue(''); }}
                   style={{ ...primaryBtn, flex: 1, fontSize: '0.8rem', padding: '0.5rem' }}
                 >
                   🛠️ Assign Issue
+                </button>
+                <button
+                  onClick={() => setSelectedStaffUser(s)}
+                  style={{
+                    background: 'rgba(99,102,241,0.12)',
+                    border: '1px solid rgba(99,102,241,0.3)',
+                    borderRadius: '8px',
+                    padding: '0.4rem 0.85rem',
+                    color: '#818cf8',
+                    fontWeight: 600,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                  }}
+                >
+                  👁️ View Profile
                 </button>
                 <button
                   onClick={() => handleRemoveStaff(s.email, s.name)}
@@ -213,6 +278,14 @@ const ManageStaff = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Staff Profile Modal */}
+      {selectedStaffUser && (
+        <UserProfileModal
+          user={selectedStaffUser}
+          onClose={() => setSelectedStaffUser(null)}
+        />
       )}
     </div>
   );

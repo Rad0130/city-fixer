@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { useForm } from 'react-hook-form';
 import useAuth from '../../Hooks/useAuth';
+import Swal from 'sweetalert2';
 
 const Login = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
@@ -9,21 +10,117 @@ const Login = () => {
   const { loginUser, googleLogin } = useAuth();
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (data) => {
-    setLoading(true); setError('');
-    loginUser(data.email, data.password)
-      .then(result => { navigate(location?.state || '/'); 
-        console.log(result);
-      })
-      .catch(err => { setError(err.message); setLoading(false); });
+    setLoading(true);
+    setError('');
+    
+    // Show loading Swal
+    Swal.fire({
+      title: 'Signing In...',
+      text: 'Please wait while we log you in',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+      background: '#0d1117',
+      color: '#fff',
+    });
+    
+    try {
+      const result = await loginUser(data.email, data.password);
+      console.log(result);
+      
+      // Close loading modal
+      Swal.close();
+      
+      // Show success modal
+      Swal.fire({
+        title: 'Welcome Back! 👋',
+        text: `Successfully logged in as ${result.user?.email || 'User'}`,
+        icon: 'success',
+        background: '#0d1117',
+        color: '#fff',
+        confirmButtonColor: '#6366f1',
+        confirmButtonText: 'Continue',
+        timer: 2000,
+        timerProgressBar: true,
+      }).then(() => {
+        navigate(location?.state?.from?.pathname || '/');
+      });
+      
+    } catch (err) {
+      Swal.close();
+      setError(err.message);
+      setLoading(false);
+      
+      // Show error modal
+      Swal.fire({
+        title: 'Login Failed',
+        text: err.message.replace('Firebase: ', '').replace(/\(.*\)/, '').trim(),
+        icon: 'error',
+        background: '#0d1117',
+        color: '#fff',
+        confirmButtonColor: '#6366f1',
+        confirmButtonText: 'Try Again',
+      });
+    }
   };
 
-  const handleGoogleLogin = () => {
-    googleLogin()
-      .then(() => navigate(location?.state || '/'))
-      .catch(err => setError(err.message));
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    
+    Swal.fire({
+      title: 'Google Sign In...',
+      text: 'Please wait while we connect to Google',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      showConfirmButton: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+      background: '#0d1117',
+      color: '#fff',
+    });
+    
+    try {
+      const result = await googleLogin();
+      console.log(result);
+      Swal.close();
+      
+      Swal.fire({
+        title: 'Welcome! 👋',
+        text: `Successfully logged in with Google`,
+        icon: 'success',
+        background: '#0d1117',
+        color: '#fff',
+        confirmButtonColor: '#6366f1',
+        confirmButtonText: 'Continue',
+        timer: 2000,
+        timerProgressBar: true,
+      }).then(() => {
+        navigate(location?.state?.from?.pathname || '/');
+      });
+      
+    } catch (err) {
+      Swal.close();
+      setError(err.message);
+      setLoading(false);
+      
+      Swal.fire({
+        title: 'Google Login Failed',
+        text: err.message,
+        icon: 'error',
+        background: '#0d1117',
+        color: '#fff',
+        confirmButtonColor: '#6366f1',
+        confirmButtonText: 'Try Again',
+      });
+    }
   };
 
   return (
@@ -74,8 +171,8 @@ const Login = () => {
           backdropFilter: 'blur(20px)',
           boxShadow: '0 30px 80px rgba(0,0,0,0.4)',
         }}>
-          {/* Error */}
-          {error && (
+          {/* Error Display */}
+          {error && !loading && (
             <div style={{
               background: 'rgba(236,72,153,0.1)', border: '1px solid rgba(236,72,153,0.3)',
               borderRadius: 10, padding: '0.75rem 1rem', marginBottom: '1.5rem',
@@ -93,18 +190,44 @@ const Login = () => {
                 {...register('email', { required: true })}
                 placeholder="you@example.com"
                 style={inputStyle(errors.email)}
+                disabled={loading}
               />
               {errors.email && <p style={errMsg}>Email is required</p>}
             </div>
 
             <div>
               <label style={labelStyle}>Password</label>
-              <input
-                type="password"
-                {...register('password', { required: true })}
-                placeholder="••••••••"
-                style={inputStyle(errors.password)}
-              />
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password', { required: true })}
+                  placeholder="••••••••"
+                  style={inputStyle(errors.password)}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'rgba(255,255,255,0.5)',
+                    fontSize: '1rem',
+                    padding: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  disabled={loading}
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
               {errors.password && <p style={errMsg}>Password is required</p>}
               <div style={{ textAlign: 'right', marginTop: '0.4rem' }}>
                 <Link to="/forget" style={{ color: '#818cf8', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 600 }}>
@@ -118,16 +241,34 @@ const Login = () => {
               disabled={loading}
               style={{
                 width: '100%', padding: '0.9rem',
-                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                background: loading ? 'rgba(99,102,241,0.5)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                 border: 'none', borderRadius: 12,
                 color: '#fff', fontWeight: 700, fontSize: '0.95rem',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                boxShadow: '0 0 30px rgba(99,102,241,0.4)',
+                boxShadow: loading ? 'none' : '0 0 30px rgba(99,102,241,0.4)',
                 transition: 'all 0.2s', fontFamily: "'DM Sans',sans-serif",
                 opacity: loading ? 0.7 : 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
               }}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? (
+                <>
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    borderTop: '2px solid #fff',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                  }} />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </form>
 
@@ -141,16 +282,19 @@ const Login = () => {
           {/* Google */}
           <button
             onClick={handleGoogleLogin}
+            disabled={loading}
             type="button"
             style={{
               width: '100%', padding: '0.85rem',
-              background: 'rgba(255,255,255,0.05)',
+              background: loading ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.05)',
               border: '1px solid rgba(255,255,255,0.12)',
               borderRadius: 12,
               color: '#fff', fontWeight: 600, fontSize: '0.9rem',
-              cursor: 'pointer', transition: 'all 0.2s',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
               fontFamily: "'DM Sans',sans-serif",
+              opacity: loading ? 0.5 : 1,
             }}
           >
             <svg width="18" height="18" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
@@ -170,13 +314,19 @@ const Login = () => {
           </p>
         </div>
       </div>
+
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </div>
   );
 };
 
 const labelStyle = { display: 'block', color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', letterSpacing: '0.03em' };
 const inputStyle = (hasError) => ({
-  width: '100%', padding: '0.8rem 1rem',
+  width: '100%', padding: '0.8rem 2.5rem 0.8rem 1rem',
   background: 'rgba(255,255,255,0.05)',
   border: `1px solid ${hasError ? 'rgba(236,72,153,0.5)' : 'rgba(255,255,255,0.1)'}`,
   borderRadius: 10, color: '#fff', fontSize: '0.9rem',

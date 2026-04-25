@@ -1,5 +1,3 @@
-// src/pages/Dashboard/Citizen/CitizenMyPayments.jsx
-
 import { useQuery } from '@tanstack/react-query';
 import useAxiosSecure from '../../../Hooks/useAxiosSecure';
 import Loading from './components/Loading';
