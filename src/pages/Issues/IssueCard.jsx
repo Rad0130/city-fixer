@@ -147,11 +147,11 @@ const IssueCard = ({ issue }) => {
         {/* Meta */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem' }}>📂</span>
+            <span style={{ fontSize: '0.8rem' }}></span>
             <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem' }}>{category}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem' }}>📍</span>
+            <span style={{ fontSize: '0.8rem' }}></span>
             <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '90%' }}>
               {location}
             </span>
