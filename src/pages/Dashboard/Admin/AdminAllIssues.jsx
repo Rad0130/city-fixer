@@ -5,6 +5,7 @@ import useAxiosSecure from '../../../Hooks/useAxiosSecure';
 import Loading from './components/Loading';
 import { glassCard, inputStyle, selectStyle, statusBadge, primaryBtn, dangerBtn, successBtn, pageBtn, labelStyle } from './components/styles';
 import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 const AdminAllIssues = () => {
   const axiosSecure = useAxiosSecure();
@@ -77,13 +78,34 @@ const AdminAllIssues = () => {
   };
 
   const handleDelete = async (id, title) => {
-    if (!window.confirm(`Delete "${title}"?`)) return;
+    // Show SweetAlert confirmation
+    const result = await Swal.fire({
+      title: 'Delete Issue?',
+      html: `Are you sure you want to delete "<strong>${title}</strong>"?<br/><br/>This action cannot be undone.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#374151',
+      confirmButtonText: 'Yes, Delete',
+      cancelButtonText: 'Cancel',
+      background: '#0d1117',
+      color: '#fff',
+    });
+
+    if (!result.isConfirmed) return;
+
+    // Show loading toast
+    toast.loading('Deleting issue...', { id: 'delete-loading' });
+
     try {
       await axiosSecure.delete(`/issues/${id}`);
+      toast.dismiss('delete-loading');
+      toast.success('Issue deleted successfully');
       queryClient.invalidateQueries(['admin-issues']);
-      toast.success('Issue deleted');
-    } catch {
-      toast.error('Failed to delete');
+    } catch (err) {
+      toast.dismiss('delete-loading');
+      toast.error('Failed to delete issue');
+      console.error('Delete error:', err);
     }
   };
 
