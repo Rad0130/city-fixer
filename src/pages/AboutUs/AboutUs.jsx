@@ -1,4 +1,5 @@
 import { motion as Motion } from 'framer-motion';
+import rad from '../../assets/RAd.png';
 
 const AboutUsPage = () => {
   const fadeUp = {
@@ -6,18 +7,6 @@ const AboutUsPage = () => {
     whileInView: { opacity: 1, y: 0 },
     viewport: { once: true },
     transition: { duration: 0.6 },
-  };
-
-  const stagger = {
-    initial: {},
-    whileInView: { transition: { staggerChildren: 0.15 } },
-    viewport: { once: true },
-  };
-
-  const cardVariant = {
-    initial: { opacity: 0, y: 30 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true },
   };
 
   return (
@@ -36,7 +25,7 @@ const AboutUsPage = () => {
       </div>
 
       {/* ── HERO ── */}
-      <section style={{ paddingTop: '8rem', paddingBottom: '6rem', position: 'relative', zIndex: 1, textAlign: 'center', padding: '8rem 1rem 6rem' }}>
+      <section style={{ position: 'relative', zIndex: 1, textAlign: 'center', padding: '8rem 1rem 6rem' }}>
         <Motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }}>
           <div style={{
             display: 'inline-block',
@@ -65,13 +54,9 @@ const AboutUsPage = () => {
           </p>
         </Motion.div>
 
-        {/* Hero stats strip */}
         <Motion.div
           initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }}
-          style={{
-            display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem',
-            marginTop: '3rem',
-          }}
+          style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1rem', marginTop: '3rem' }}
         >
           {[
             { val: '2020', label: 'Founded', color: '#818cf8' },
@@ -96,7 +81,6 @@ const AboutUsPage = () => {
       <section style={{ position: 'relative', zIndex: 1, padding: '4rem clamp(1rem,6vw,5rem)' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '3rem', alignItems: 'center' }}>
 
-          {/* Left text */}
           <Motion.div {...fadeUp}>
             <div style={{
               background: 'rgba(255,255,255,0.03)',
@@ -105,7 +89,6 @@ const AboutUsPage = () => {
               backdropFilter: 'blur(12px)',
               position: 'relative', overflow: 'hidden',
             }}>
-              {/* Accent glow */}
               <div style={{ position: 'absolute', top: -40, left: -40, width: 200, height: 200, background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
               <div style={{
                 display: 'inline-block', background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
@@ -125,7 +108,6 @@ const AboutUsPage = () => {
             </div>
           </Motion.div>
 
-          {/* Right: milestone grid */}
           <Motion.div {...fadeUp} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             {[
               { year: '2020', event: 'Platform launched in Dhaka', color: 'linear-gradient(135deg, #6366f1, #8b5cf6)', glow: 'rgba(99,102,241,0.4)' },
@@ -239,17 +221,19 @@ const AboutUsPage = () => {
             </p>
           </Motion.div>
 
-          <Motion.div variants={stagger} initial="initial" whileInView="animate" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
             {[
-              { name: 'Alex Chen', role: 'Founder & CEO', emoji: '👨‍💼', bio: 'Urban tech visionary with 10+ years in civic innovation.', color: 'linear-gradient(135deg, #6366f1, #22d3ee)', glow: 'rgba(99,102,241,0.4)' },
+              { name: 'Shafiur Rahman Rad', role: 'Founder & CEO', image: rad, bio: 'Urban tech visionary building civic innovation from the ground up.', color: 'linear-gradient(135deg, #6366f1, #22d3ee)', glow: 'rgba(99,102,241,0.4)' },
               { name: 'Sarah Johnson', role: 'Head of Operations', emoji: '👩‍💻', bio: 'Operations expert who keeps the city fix engine running.', color: 'linear-gradient(135deg, #ec4899, #8b5cf6)', glow: 'rgba(236,72,153,0.4)' },
               { name: 'Marcus Rivera', role: 'Lead Developer', emoji: '🧑‍🔧', bio: 'Full-stack wizard behind the seamless CityFix experience.', color: 'linear-gradient(135deg, #10b981, #06b6d4)', glow: 'rgba(16,185,129,0.4)' },
-            ].map((member) => (
+            ].map((member, i) => (
               <Motion.div
                 key={member.name}
-                variants={cardVariant}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: i * 0.15 }}
                 whileHover={{ y: -8 }}
-                transition={{ duration: 0.3 }}
                 style={{
                   background: 'rgba(255,255,255,0.03)',
                   border: '1px solid rgba(255,255,255,0.08)',
@@ -264,14 +248,23 @@ const AboutUsPage = () => {
                 {/* Avatar */}
                 <div style={{
                   width: 90, height: 90, borderRadius: '50%',
-                  background: member.color,
+                  background: member.image ? 'transparent' : member.color,
                   margin: '0 auto 1.2rem',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '2.2rem',
                   boxShadow: `0 0 30px ${member.glow}`,
                   border: '3px solid rgba(255,255,255,0.1)',
+                  overflow: 'hidden',
                 }}>
-                  {member.emoji}
+                  {member.image ? (
+                    <img
+                      src={member.image}
+                      alt={member.name}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                    />
+                  ) : (
+                    member.emoji
+                  )}
                 </div>
 
                 <h3 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 800, fontSize: '1.2rem', color: '#fff', marginBottom: '0.3rem' }}>{member.name}</h3>
@@ -284,7 +277,7 @@ const AboutUsPage = () => {
                 <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.875rem', lineHeight: 1.65 }}>{member.bio}</p>
               </Motion.div>
             ))}
-          </Motion.div>
+          </div>
         </div>
       </section>
 

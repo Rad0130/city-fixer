@@ -4,6 +4,7 @@ import useAxiosSecure from '../../Hooks/useAxiosSecure';
 import useAuth from '../../Hooks/useAuth';
 import useRole from '../../Hooks/useRole';
 import toast from 'react-hot-toast';
+import Swal from 'sweetalert2';
 
 const statusConfig = {
   'Open':        { color: '#34d399', bg: 'rgba(52,211,153,0.12)', border: 'rgba(52,211,153,0.3)' },
@@ -21,7 +22,7 @@ const priorityConfig = {
 
 const IssueCard = ({ issue }) => {
   const { title, status, priority, category, _id, location, upvotes, upvotedBy, image, reportedBy } = issue;
-  const axiosSecure = useAxiosSecure(); // FIX: use authenticated axios
+  const axiosSecure = useAxiosSecure();
   const { user } = useAuth();
   const { isCitizen } = useRole();
   const navigate = useNavigate();
@@ -35,7 +36,10 @@ const IssueCard = ({ issue }) => {
   const pc = priorityConfig[priority] || priorityConfig['Normal'];
 
   const handleVotes = async () => {
-    if (!user) { navigate('/login'); return; }
+    if (!user) { 
+      navigate('/login'); 
+      return; 
+    }
     if (!isCitizen) {
       toast.error('Only citizens can upvote issues', { position: 'top-center' });
       return;
@@ -55,16 +59,60 @@ const IssueCard = ({ issue }) => {
       await axiosSecure.patch(`/issues/${_id}/upvote`);
       setVotes(v => v + 1);
       setVoted(true);
+      
+      // Show SweetAlert success message
+      Swal.fire({
+        title: 'Upvoted! 👍',
+        text: 'You have successfully upvoted this issue. Thank you for your support!',
+        icon: 'success',
+        background: '#0d1117',
+        color: '#fff',
+        confirmButtonColor: '#6366f1',
+        confirmButtonText: 'Great!',
+        timer: 2000,
+        timerProgressBar: true,
+        showConfirmButton: true,
+      });
+      
       toast.success('Upvoted! 👍', { position: 'top-center' });
     } catch (err) {
       const msg = err?.response?.data?.message || 'Failed to upvote';
       const status = err?.response?.status;
       if (status === 409) {
-        setVoted(true); // already voted — sync state
+        setVoted(true);
+        Swal.fire({
+          title: 'Already Upvoted',
+          text: 'You have already upvoted this issue. You can only upvote once per issue.',
+          icon: 'warning',
+          background: '#0d1117',
+          color: '#fff',
+          confirmButtonColor: '#6366f1',
+          confirmButtonText: 'Got it',
+          timer: 2000,
+          timerProgressBar: true,
+        });
         toast.error('You have already upvoted this issue', { position: 'top-center' });
       } else if (status === 403) {
+        Swal.fire({
+          title: 'Cannot Upvote',
+          text: msg,
+          icon: 'error',
+          background: '#0d1117',
+          color: '#fff',
+          confirmButtonColor: '#6366f1',
+          confirmButtonText: 'OK',
+        });
         toast.error(msg, { position: 'top-center' });
       } else {
+        Swal.fire({
+          title: 'Upvote Failed',
+          text: 'Something went wrong. Please try again later.',
+          icon: 'error',
+          background: '#0d1117',
+          color: '#fff',
+          confirmButtonColor: '#6366f1',
+          confirmButtonText: 'OK',
+        });
         toast.error(msg, { position: 'top-center' });
       }
     } finally {
